@@ -18,7 +18,7 @@ GAMES.walk=cfg=>{const g={axes:true,t:0,done:false,got:0,met:0,bumps:0,hx:0.8,hy
  g.key=c=>{if(c==='ArrowUp'||c==='KeyW'||c==='Space'){g.jump();return true}return false};
  g.padBtn=n=>{if(n==='a'||n==='up'&&false){g.jump();return true}return false};
  g.up=p=>{if(p.tap||p.swipe==='up')g.jump()};
- g.update=dt=>{g.t+=dt;const{U,gy}=dims(),R=ch().R,walkV=R.vw/R.ground,runV=R.vr/R.ground*1.05;
+ g.update=dt=>{g.t+=dt;const{U,gy}=dims(),R=ch().R,walkV=R.vw/R.ground*0.95,runV=R.vr/R.ground*1.05;
   let dir=axisX(),run=runHeld();
   for(const p of G.ptr.values()){if(performance.now()-p.st<110)continue;const cam=g.cam||0,hsx=g.hx*U-cam,dx=p.x-hsx;if(Math.abs(dx)>U*0.22){dir=Math.sign(dx);run=Math.abs(dx)>Math.max(U*1.3,G.W*0.3)}else dir=0;break}
   if(Math.abs(dir)<0.2)dir=0;const tv=dir?Math.sign(dir)*(run?runV:walkV):0;g.vx+=clamp(tv-g.vx,-4*dt,4*dt);if(dir)g.flip=dir<0;
