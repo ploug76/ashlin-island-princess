@@ -1,7 +1,7 @@
 /* auto-update: HTML/JS/CSS/JSON always revalidated with the server (no stale copies); cache is the offline fallback */
 const __NC=r=>{try{const u=new URL(r.url);return u.origin==location.origin&&(r.mode=='navigate'||/(\/|\.html?|\.m?js|\.css|\.json)$/.test(u.pathname))?{cache:'no-cache'}:{}}catch(e){return {}}};
-const CACHE='ashlin-island-princess-v3';
-const FILES=['./','index.html','style.css?v=1','js/kneerig.js?v=1','js/rig.js?v=1','js/audio.js?v=1','js/art.js?v=1','js/core.js?v=1','js/games.js?v=2','js/story.js?v=1','js/main.js?v=1',
+const CACHE='ashlin-island-princess-v4';
+const FILES=['./','index.html','style.css?v=1','js/kneerig.js?v=1','js/rig.js?v=1','js/audio.js?v=1','js/art.js?v=1','js/core.js?v=1','js/games.js?v=3','js/story.js?v=1','js/main.js?v=1',
  'assets/ashlin-child.png?v=1','assets/ashlin-child.json?v=1','assets/ashlin-adult.png?v=1','assets/ashlin-adult.json?v=1','assets/photos.json?v=1','manifest.json','icon-192.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)));self.skipWaiting()});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(n=>n!==CACHE&&n.startsWith('ashlin-island-princess-')).map(n=>caches.delete(n)))).then(()=>self.clients.claim()))});
