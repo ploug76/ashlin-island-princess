@@ -23,7 +23,18 @@ function stageRect(){if(G.mode==='story'){const b=$('storyBox').getBoundingClien
   return G.land?{x:0,y:0,w:Math.min(h.left,b.left)-6,h:G.H}:{x:0,y:h.bottom+4,w:G.W,h:b.top-h.bottom-10}}
  return{x:0,y:0,w:G.W,h:G.H}}
 /* ---------- Ashlin drawing ---------- */
-function drawAsh(v,o,x,foot,hpx,flip){const ch=G.ash[v];if(!ch||!ch.R)return;const R=ch.R,k=hpx/R.ground;cx.save();cx.translate(x,foot);cx.scale(flip?-k:k,k);cx.translate(-R.w/2,-R.ground);AshRig.draw(cx,ch,o||{});cx.restore();return k}
+/* Ashlin is drawn into a small offscreen canvas first, then onto the scene with a soft white glow and a contact shadow,
+   so the white cutout reads as a clean, intentional silhouette on any painted background. */
+const ashC=document.createElement('canvas'),ashX=ashC.getContext('2d');
+function drawAsh(v,o,x,foot,hpx,flip,opt){const ch=G.ash[v];if(!ch||!ch.R)return;const R=ch.R,k=hpx/R.ground;opt=opt||{};
+ const pad=16*G.s,bw=Math.ceil(R.w*k*2.4+pad*2),bh=Math.ceil(hpx*1.12+pad*2),d=G.dpr;
+ if(ashC.width<bw*d||ashC.height<bh*d){ashC.width=Math.max(ashC.width,bw*d);ashC.height=Math.max(ashC.height,bh*d)}
+ ashX.setTransform(1,0,0,1,0,0);ashX.clearRect(0,0,bw*d+2,bh*d+2);ashX.setTransform(d,0,0,d,0,0);
+ ashX.translate(bw/2,bh-pad);ashX.scale(flip?-k:k,k);ashX.translate(-R.w/2,-R.ground);AshRig.draw(ashX,ch,o||{});
+ if(!opt.noShadow&&window.GFX)GFX.shadow(x,foot,hpx*0.16,0.25);
+ cx.save();cx.shadowColor=R.glow||'rgba(255,255,255,.95)';cx.shadowBlur=Math.max(6,hpx*0.06);
+ cx.drawImage(ashC,0,0,bw*d,bh*d,x-bw/2,foot-(bh-pad),bw,bh);cx.shadowColor='rgba(200,180,255,.55)';cx.shadowBlur=Math.max(10,hpx*0.14);cx.globalAlpha*=0.6;
+ cx.drawImage(ashC,0,0,bw*d,bh*d,x-bw/2,foot-(bh-pad),bw,bh);cx.restore();return k}
 function stepAsh(v,o,wx,hpx,flip,on){const ch=G.ash[v];if(!ch||!ch.R)return;AshRig.step(o,wx,hpx/ch.R.ground,flip,ch.R,on)}
 /* ---------- input ---------- */
 function P(e){return{x:e.clientX,y:e.clientY,id:e.pointerId,t:performance.now()}}
@@ -62,6 +73,6 @@ function menuNav(E){const bs=[...document.querySelectorAll('#ui button')].filter
  const mv=(E('down')||E('right')||(G.pad.ay>0.6&&!G._nav))?1:(E('up')||E('left')||(G.pad.ay<-0.6&&!G._nav))?-1:0;G._nav=Math.abs(G.pad.ay)>0.6;
  if(mv){i=i<0?0:(i+mv+bs.length)%bs.length;bs[i].focus()}if(E('a')){(i>=0?bs[i]:bs[0]).click()}if(E('b')){const sk=$('bSkip');if(sk.offsetParent)sk.click()}}
 function cursorUpdate(dt){if(G.game&&G.game.axes)return;const ax=axisX(),ay=axisY();if(ax||ay){G.cur.on=true;G.cur.x=Math.max(0,Math.min(G.W,G.cur.x+ax*620*dt*G.s));G.cur.y=Math.max(0,Math.min(G.H,G.cur.y+ay*620*dt*G.s))}}
-function drawCursor(){if(!G.cur.on||(G.game&&G.game.axes))return;const s=G.s;Art.circ(G.cur.x,G.cur.y,22*s,null,'#2a2238',7*s);Art.circ(G.cur.x,G.cur.y,22*s,null,'#ffd23f',4*s);Art.circ(G.cur.x,G.cur.y,4*s,'#ffd23f')}
+function drawCursor(){if(!G.cur.on||(G.game&&G.game.axes))return;const s=G.s,c=G.cur;cx.save();cx.lineWidth=7*s;cx.strokeStyle='#4a2a6a';cx.beginPath();cx.arc(c.x,c.y,22*s,0,7);cx.stroke();cx.lineWidth=4*s;cx.strokeStyle='#ffd23f';cx.stroke();cx.fillStyle='#ffd23f';cx.beginPath();cx.arc(c.x,c.y,4*s,0,7);cx.fill();cx.restore()}
 function togglePause(){if(G.mode!=='play')return;G.paused=!G.paused;$('pause').hidden=!G.paused;if(G.paused){$('bPSound').textContent='Sound: '+(Sound.isOn()?'On':'Off');$('bResume').focus()}}
 const lerp=(a,b,t)=>a+(b-a)*t,clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),rnd=(a,b)=>a+Math.random()*(b-a),pick=a=>a[Math.floor(Math.random()*a.length)];

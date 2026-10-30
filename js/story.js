@@ -22,6 +22,7 @@ const CHAPTERS=[
  {title:'The Prince and the Crocodiles',v:'adult',music:'story',game:{type:'crocs',music:'danger',how:'Crocodiles are swimming at the stranger! Tap each crocodile to talk it calm. Calm 10 to save him.'},
   intro:[['tenyears',N,'One day, Prince Antonio of Apollonia was exploring the South Seas and landed on her island.'],
    ['antonio','Antonio','What a beautiful island! I wonder who lives here...'],
+   ['antonio','Frazer','Careful, Your Highness. That lagoon looks rather... toothy.'],
    ['antonio','Azul','Ash, look! A stranger in the lagoon... and the crocodiles have seen him!'],
    ['antonio','Ashlin','I can talk to them. Leave it to me!']],
   outro:[['antonio','Antonio','You saved me! And you can talk to animals? Amazing.'],
@@ -31,7 +32,7 @@ const CHAPTERS=[
   intro:[['voyage',N,'Ash, Sagi, Azul and Tika sailed away with Antonio on his ship.'],
    ['voyage','Ashlin','A whole world out there! I have never seen anything past my island.']],
   outro:[['voyage',N,'Along the way, Ash and Antonio began to fall in love.'],
-   ['palace',N,'At last the ship reached Apollonia, with its shining towers.']]},
+   ['kingdom',N,'At last the ship reached Apollonia, with its shining towers.']]},
  {title:'Welcome to Apollonia',v:'adult',music:'palace',game:{type:'walk',music:'palace',how:'Walk through the palace to the ballroom. Say hello to the princesses and Tallulah, and pick up the flowers. Jump over the rats!',
    cfg:{v:'adult',bg:'palace',len:30,icon:'\u273F',ariana:16.5,
     items:[{x:3.5,h:0.35},{x:6,h:0.9},{x:9.2,h:0.35},{x:12,h:1.0},{x:15,h:0.35},{x:19.5,h:0.9},{x:23,h:0.35},{x:26.5,h:1.0}],
@@ -88,45 +89,55 @@ const CHAPTERS=[
    ['finale',N,'Princess Ashlin and Prince Antonio were married.'],
    ['finale',N,'Then they sailed off on a new adventure, with Tika, Sagi, Azul and Tallulah right beside them.'],
    ['finale',N,'The End.']]}];
-/* ---------- story pictures (drawn in the free area above / left of the story box) ---------- */
-function tableau(key,r,t){const s=G.s,W=G.W,H=G.H,A=Art,gy=r.y+r.h*0.92,hh=Math.min(r.h*0.62,r.w*0.40),cxm=r.x+r.w/2,ash=(v,x,f)=>drawAsh(v,{},x,gy,v==='child'?hh*0.72:hh,f);
- const bg=k=>{if(k==='island')A.islandBg(W,H,t,s,gy);else if(k==='hall')A.palaceHall(W,H,t,s,0,gy);else if(k==='ball')A.ballroom(W,H,t,s);else if(k==='garden')A.garden(W,H,t,s)};
- const P=(who,x,h,o={})=>A.person(x,gy,h||hh,t,{...A.CAST[who],...o});
- switch(key){
-  case'storm':{A.sky(W,H,['#1c2440','#3a4466','#55607f']);for(let i=0;i<40;i++){const x=(i*73%100)/100*W,y=((i*37%100)/100*H+t*300*s)%H;A.ln([[x,y],[x-6*s,y+18*s]],'rgba(200,220,255,.5)',2*s)}
-   if(Math.sin(t*0.9)>0.97){cx.fillStyle='rgba(255,255,255,.18)';cx.fillRect(0,0,W,H)}A.sea(W,r.y+r.h*0.62,H,t*2.2,'#2a4a7a','#14264a',s);cx.save();cx.translate(cxm,r.y+r.h*0.66);cx.rotate(Math.sin(t*1.1)*0.08);A.shipSide(0,0,Math.min(r.w*0.6,320*s),t,s,'#7b3fb5');cx.restore();break}
-  case'beach':case'chest':{A.islandBg(W,H,t,s,gy);A.palm(r.x+r.w*0.12,gy,hh*1.2,0.2,t);for(let i=0;i<4;i++){cx.save();cx.translate(r.x+r.w*(0.3+i*0.18),gy-6*s);cx.rotate(i*0.5-0.7);A.rr(-28*s,-6*s,56*s,12*s,4*s,'#a87a4a',A.LINE,1.5*s);cx.restore()}
-   ash('child',cxm,false);A.sagi(cxm-hh*0.6,gy,hh*0.32,{},t,{});A.azul(cxm+hh*0.62,gy,hh*0.42,t,{flip:true});
-   if(key==='chest'){const x=cxm+hh*0.25,y=gy-hh*0.08;A.rr(x-30*s,y-18*s,60*s,36*s,6*s,'#9a5a2a',A.LINE,2*s);A.rr(x-30*s,y-22*s,60*s,12*s,6*s,'#b06a32',A.LINE,2*s);A.rr(x-18*s,y-3*s,36*s,14*s,2*s,'#ffd23f',A.LINE,1.5*s);cx.font='800 '+Math.round(11*s)+'px sans-serif';cx.fillStyle='#2a2238';cx.textAlign='center';cx.fillText('A-S-H',x,y+5*s)}break}
-  case'grow':{bg('island');A.palm(r.x+r.w*0.85,gy,hh*1.3,-0.2,t);ash('child',cxm-hh*0.1,false);A.tika(cxm+hh*0.55,gy,hh*0.42,{},t,{flip:true});A.sagi(cxm-hh*0.6,gy,hh*0.3,{},t,{});A.azul(cxm+hh*0.1,gy-hh*0.85,hh*0.34,t,{fly:true});break}
-  case'tenyears':{bg('island');A.palm(r.x+r.w*0.12,gy,hh*1.3,0.2,t);ash('adult',cxm,false);A.tika(cxm+hh*0.55,gy,hh*0.4,{},t,{flip:true});A.sagi(cxm-hh*0.5,gy,hh*0.25,{},t,{});A.azul(cxm-hh*0.85,gy,hh*0.4,t,{fan:true});break}
-  case'antonio':{bg('island');A.shipSide(r.x+r.w*0.82,gy-hh*0.5,Math.min(r.w*0.4,200*s),t,s);ash('adult',cxm-hh*0.35,false);P('antonio',cxm+hh*0.3,hh*1.02,{flip:true});A.tika(cxm-hh*0.9,gy,hh*0.36,{},t,{});A.sagi(cxm-hh*1.25,gy,hh*0.22,{},t,{});break}
-  case'voyage':{A.sky(W,H,['#7fd3ff','#ffe9c4']);A.sun(r.x+r.w*0.8,r.y+r.h*0.2,24*s);A.sea(W,r.y+r.h*0.6,H,t,'#5fd6e6','#1f86b8',s);cx.save();cx.translate(cxm,r.y+r.h*0.78);cx.rotate(Math.sin(t*0.9)*0.04);A.shipSide(0,0,Math.min(r.w*0.75,360*s),t,s);
-   const hm=Math.min(r.w*0.75,360*s)*0.35*0.95;drawAsh('adult',{},-hm*0.6,-Math.min(r.w*0.75,360*s)*0.35*0.32,hm,false);A.person(-hm*0.15,-Math.min(r.w*0.75,360*s)*0.35*0.32,hm*1.02,t,{...A.CAST.antonio,flip:true});cx.restore();A.dolphin(r.x+r.w*0.15,r.y+r.h*0.9,22*s,t,{});break}
-  case'palace':{bg('hall');P('king',cxm-hh*0.1,hh*1.08);P('danielle',cxm+hh*0.38,hh*1.0,{flip:true});ash('adult',cxm-hh*0.75,false);P('antonio',cxm-hh*0.45,hh*1.02);break}
-  case'ariana':{bg('hall');P('ariana',cxm+hh*0.2,hh*1.05,{flip:true});P('luciana',cxm+hh*0.62,hh*0.98,{flip:true});P('antonio',cxm-hh*0.3,hh*1.02);ash('adult',cxm-hh*0.72,false);break}
-  case'sisters':{bg('hall');ash('adult',cxm-hh*0.6,false);P('rita',cxm-hh*0.05,hh*0.85,{flip:true});P('sofia',cxm+hh*0.35,hh*0.8,{flip:true});P('gina',cxm+hh*0.72,hh*0.78,{flip:true});A.tallulah(cxm+hh*0.2,gy-hh*0.82,hh*0.28,t,{});break}
-  case'sad':{A.sky(W,H,['#1c2450','#3a3a7a']);for(let i=0;i<25;i++)A.sparkle((i*37%100)/100*W,(i*53%60)/100*r.h,3*s,'#fff',0.6);A.circ(r.x+r.w*0.8,r.y+r.h*0.2,22*s,'#fff6d6');cx.fillStyle='#3a2a5a';cx.fillRect(0,gy,W,H);
-   ash('adult',cxm,false);A.sagi(cxm-hh*0.5,gy,hh*0.26,{},t,{});A.tika(cxm+hh*0.55,gy,hh*0.38,{},t,{flip:true});A.azul(cxm-hh*0.9,gy,hh*0.36,t,{});break}
-  case'ball':{bg('ball');cx.save();cx.translate(cxm,gy);cx.rotate(Math.sin(t*1.6)*0.04);drawAsh('adult',{},-hh*0.2,0,hh,false);A.person(hh*0.22,0,hh*1.02,t,{...A.CAST.antonio,flip:true});cx.restore();A.tallulah(r.x+r.w*0.12,gy,hh*0.3,t,{});A.azul(r.x+r.w*0.88,gy,hh*0.4,t,{fan:true,flip:true});break}
-  case'carriage':{bg('hall');const x=cxm+hh*0.25;A.rr(x-hh*0.4,gy-hh*0.6,hh*0.8,hh*0.45,hh*0.1,'#7b3fb5',A.LINE,2*s);A.circ(x-hh*0.25,gy-hh*0.12,hh*0.12,'#5a3a1a',A.LINE,2*s);A.circ(x+hh*0.25,gy-hh*0.12,hh*0.12,'#5a3a1a',A.LINE,2*s);
-   A.ln([[x+hh*0.3,gy-hh*0.6],[x+hh*0.3,gy-hh*1.0]],'#5a3a1a',3*s);A.banner(x+hh*0.3,gy-hh*1.0,hh*0.32,'paladia',s);A.sagi(cxm-hh*0.55,gy,hh*0.3,{},t,{});break}
-  case'note':{bg('hall');A.tika(cxm-hh*0.1,gy,hh*0.5,{},t,{trunkUp:true});A.rr(cxm+hh*0.15,gy-hh*0.85,hh*0.3,hh*0.22,4*s,'#fffcf0',A.LINE,2*s);A.ln([[cxm+hh*0.2,gy-hh*0.78],[cxm+hh*0.4,gy-hh*0.78]],'#888',2*s);A.ln([[cxm+hh*0.2,gy-hh*0.72],[cxm+hh*0.38,gy-hh*0.72]],'#888',2*s);P('antonio',cxm+hh*0.7,hh*1.02,{flip:true});break}
-  case'rats':{A.sky(W,H,['#2a1d3e','#4a2a5e']);cx.fillStyle='#3a2a3a';cx.fillRect(0,gy,W,H);P('ariana',cxm,hh*1.05);A.rat(cxm-hh*0.55,gy,hh*0.16,{},t,{herb:true});A.rat(cxm+hh*0.5,gy,hh*0.16,{},t,{herb:true,flip:true});break}
-  case'sleep':{bg('hall');A.azul(cxm-hh*0.4,gy,hh*0.45,t,{sleep:true});zzz(cxm-hh*0.3,gy-hh*0.5,s,t);A.tallulah(cxm+hh*0.4,gy,hh*0.36,t,{sleep:true,flip:true});zzz(cxm+hh*0.45,gy-hh*0.4,s,t);break}
-  case'prison':{bg('hall');ash('adult',cxm-hh*0.1,false);A.sagi(cxm-hh*0.55,gy,hh*0.26,{},t,{});A.tika(cxm+hh*0.45,gy,hh*0.38,{},t,{flip:true});for(let i=-4;i<=4;i++)A.rr(cxm+i*hh*0.22-4*s,gy-hh*1.15,8*s,hh*1.15,3*s,'#5a5a6a',A.LINE,1.5*s);A.rr(cxm-hh,gy-hh*1.18,hh*2,10*s,3*s,'#5a5a6a');P('king',r.x+r.w*0.9,hh*1.0,{flip:true});break}
-  case'shipaway':{A.sky(W,H,['#7fa8d0','#d0dceb']);A.sea(W,r.y+r.h*0.65,H,t,'#4a9ac0','#1f5f98',s);cx.save();cx.translate(cxm,r.y+r.h*0.8);A.shipSide(0,0,Math.min(r.w*0.7,340*s),t,s);const hm=Math.min(r.w*0.7,340*s)*0.33;
-   drawAsh('adult',{},-hm*0.4,-hm*0.36,hm,false);A.person(hm*0.35,-hm*0.36,hm,t,{...A.CAST.sailor,flip:true});cx.restore();break}
-  case'splash':{A.sky(W,H,['#7fa8d0','#d0dceb']);A.sea(W,r.y+r.h*0.45,H,t,'#4a9ac0','#1f5f98',s);ash('adult',cxm,false);for(let i=0;i<8;i++)A.circ(cxm+(i-3.5)*hh*0.12,gy-hh*0.1+Math.sin(t*3+i)*4*s,hh*0.08,'rgba(255,255,255,.8)');A.dolphin(cxm+hh*0.8,gy-hh*0.1,hh*0.2,t,{flip:true});break}
-  case'dolphins':{A.sky(W,H,['#7fd3ff','#ffe9c4']);A.sea(W,r.y+r.h*0.5,H,t,'#5fd6e6','#1f86b8',s);A.dolphin(cxm,gy-hh*0.1,hh*0.28,t,{});drawAsh('adult',{},cxm,gy-hh*0.25,hh*0.75,false);A.dolphin(cxm-hh*0.9,gy,hh*0.24,t,{});A.tika(cxm-hh*0.9,gy-hh*0.12,hh*0.3,{},t,{});A.dolphin(cxm+hh*0.9,gy,hh*0.22,t,{});A.sagi(cxm+hh*0.9,gy-hh*0.1,hh*0.18,{},t,{});break}
-  case'bird':{bg('island');ash('adult',cxm-hh*0.2,false);A.bird(cxm+hh*0.35,gy-hh*0.9+Math.sin(t*2)*6*s,hh*0.14,t,{flip:true});A.tika(cxm+hh*0.7,gy,hh*0.38,{},t,{flip:true});break}
-  case'greenhouse':{A.greenhouse(W,H,t,s);ash('adult',cxm-hh*0.2,false);A.rr(cxm+hh*0.2,gy-hh*0.5,hh*0.16,hh*0.24,8*s,'#b9f5ff',A.LINE,2*s);A.sparkle(cxm+hh*0.28,gy-hh*0.6,10*s,'#fff');A.sagi(cxm+hh*0.62,gy,hh*0.26,{},t,{flip:true});break}
-  case'wedding':{bg('garden');P('king',cxm-hh*0.75,hh*0.98);P('luciana',cxm-hh*0.3,hh*0.92);P('antonio',cxm+hh*0.05,hh*0.98,{flip:true});ash('adult',cxm+hh*0.45,true);A.tika(cxm+hh*0.95,gy,hh*0.36,{},t,{flip:true,trunkUp:true});A.tallulah(r.x+r.w*0.08,gy,hh*0.28,t,{});break}
-  case'pigsty':{A.sky(W,H,['#9fd8ff','#e2f6ff']);cx.fillStyle='#8a6a3a';cx.fillRect(0,gy-hh*0.1,W,H);A.ell(cxm,gy,hh*0.9,hh*0.18,'#6a4a22');P('ariana',cxm,hh*0.9,{frown:1});A.ell(cxm,gy+2*s,hh*0.6,hh*0.12,'#6a4a22');
-   for(const [dx,f] of[[-0.8,0],[0.75,1]]){const x=cxm+dx*hh,y=gy-hh*0.12;cx.save();cx.translate(x,y);if(f)cx.scale(-1,1);A.ell(0,0,hh*0.2,hh*0.12,'#f7b6c8',A.LINE,2*s);A.circ(hh*0.18,-hh*0.04,hh*0.08,'#f7b6c8',A.LINE,2*s);A.ell(hh*0.25,-hh*0.03,hh*0.03,hh*0.025,'#e7799a');cx.restore()}
-   for(let i=0;i<5;i++)A.rr(r.x+r.w*(0.05+i*0.22),gy-hh*0.45,8*s,hh*0.45,2*s,'#9a6a3a');A.rr(0,gy-hh*0.38,W,8*s,2*s,'#9a6a3a');break}
-  case'reveal':{bg('garden');P('marissa',cxm-hh*0.3,hh*1.0);ash('adult',cxm+hh*0.3,true);A.heart(cxm,gy-hh*1.15,12*s);break}
-  case'finale':{A.sky(W,H,['#ff9ec7','#ffd7a8','#fff1c9']);A.sun(r.x+r.w*0.5,r.y+r.h*0.5,40*s,'#fff3b0');A.sea(W,r.y+r.h*0.62,H,t,'#ffb4a0','#7b5fc8',s);cx.save();cx.translate(cxm,r.y+r.h*0.82);cx.rotate(Math.sin(t*0.9)*0.03);
-   const w=Math.min(r.w*0.8,380*s),hm=w*0.3;A.shipSide(0,0,w,t,s,'#7b3fb5');drawAsh('adult',{},-hm*0.5,-w*0.35*0.32,hm,false);A.person(-hm*0.05,-w*0.35*0.32,hm*1.02,t,{...A.CAST.antonio,flip:true});A.tika(hm*0.6,-w*0.35*0.32,hm*0.36,{},t,{flip:true});A.sagi(hm*0.95,-w*0.35*0.32,hm*0.2,{},t,{flip:true});cx.restore();
-   A.azul(r.x+r.w*0.2,r.y+r.h*0.3,hh*0.3,t,{fly:true});A.tallulah(cxm+w*0.2,r.y+r.h*0.82-w*0.35*2.1,hh*0.18,t,{});for(let i=0;i<8;i++)A.heart(r.x+r.w*((i*0.13+t*0.02)%1),r.y+r.h*(0.1+0.05*(i%3)),7*s,'rgba(255,93,143,.7)');break}
-  default:A.islandBg(W,H,t,s,gy)}}
+/* ---------- cinematic story cards: painted background (slow push-in), cast that eases in, ambient motion, letterbox ----------
+   cast entries: [who, x (0..1 across the free area), height (x adult height), face, lift]. who 'ash' / 'ashc' = Ashlin's rig. */
+const SCENES={
+ storm:{bg:'storm',amb:['rain'],cast:[]},
+ beach:{bg:'beach',amb:['birds','sparkle'],cast:[['sagi',0.25,0.34,'r'],['ashc',0.5,0.8,'r'],['azul_stand',0.76,0.6,'l']]},
+ chest:{bg:'beach',amb:['sparkle'],cast:[['sagi',0.18,0.34,'r'],['ashc',0.4,0.8,'r'],['chest',0.62,0.3],['azul_stand',0.84,0.6,'l']]},
+ grow:{bg:'jungle',amb:['rays','leaves','motes'],cast:[['sagi',0.2,0.3,'r'],['ashc',0.42,0.8,'r'],['tika',0.7,0.5,'l'],['azul_fly',0.5,0.4,'r',0.75]]},
+ tenyears:{bg:'lagoon',amb:['sparkle','birds'],cast:[['azul_stand',0.14,0.6,'r'],['sagi',0.32,0.3,'r'],['ash',0.52,1,'r'],['tika',0.78,0.5,'l']]},
+ antonio:{bg:'lagoon',amb:['sparkle'],cast:[['tika',0.12,0.45,'r'],['ash',0.34,1,'r'],['antonio',0.64,1.05,'l'],['frazer',0.86,0.92,'l']]},
+ voyage:{bg:'sea_sunset',deck:1,amb:['birds'],cast:[['sagi',0.14,0.3,'r'],['ash',0.36,1,'r'],['antonio',0.58,1.05,'l'],['tika',0.82,0.46,'l']]},
+ kingdom:{bg:'kingdom',amb:['birds','sparkle'],cast:[]},
+ palace:{bg:'palace',amb:['motes'],cast:[['ash',0.16,1,'r'],['antonio',0.36,1.05,'r'],['king',0.64,1.08,'l'],['danielle',0.85,1.0,'l']]},
+ ariana:{bg:'palace',amb:['motes'],tint:'rgba(60,20,80,.18)',cast:[['luciana',0.36,0.98,'r'],['ariana',0.66,1.1,'l']]},
+ sisters:{bg:'palace',amb:['motes'],cast:[['ash',0.14,1,'r'],['rita',0.36,0.92],['sofia',0.56,0.92],['gina',0.76,0.94],['tallulah',0.92,0.4,'l']]},
+ sad:{bg:'palace',amb:['motes'],tint:'rgba(30,30,80,.28)',cast:[['ash',0.4,1,'l'],['sagi',0.6,0.3,'l'],['tika',0.8,0.48,'l'],['azul_stand',0.18,0.6,'r']]},
+ ball:{bg:'ballroom',amb:['sparkle','petals'],cast:[['ash',0.42,1,'r'],['antonio',0.6,1.05,'l']]},
+ carriage:{bg:'courtyard',amb:['birds'],cast:[['sagi',0.3,0.34,'r'],['banner',0.62,0.75]]},
+ note:{bg:'palace',amb:['motes'],cast:[['antonio',0.3,1.05,'r'],['tika',0.66,0.5,'l']],prop:'note'},
+ rats:{bg:'courtyard',amb:[],tint:'rgba(60,20,80,.25)',cast:[['rat',0.2,0.2,'r'],['rat',0.34,0.2,'r'],['rat',0.48,0.2,'r'],['ariana',0.76,1.1,'l']]},
+ sleep:{bg:'courtyard',amb:['zzz'],tint:'rgba(30,30,90,.25)',cast:[['azul_stand',0.36,0.6,'r',0,0.5],['tallulah',0.62,0.4,'l',0,-0.4]]},
+ prison:{bg:'prison',amb:['motes'],cast:[['azul_stand',0.14,0.6,'r'],['sagi',0.3,0.3,'r'],['ash',0.48,1,'r'],['tika',0.66,0.48,'r'],['king',0.88,1.08,'l']]},
+ shipaway:{bg:'sea_sunset',deck:1,tint:'rgba(40,20,80,.2)',amb:['birds'],cast:[['sagi',0.2,0.3,'r'],['ash',0.45,1,'r'],['tika',0.7,0.48,'l']]},
+ splash:{bg:'sea_sunset',amb:['bubbles'],tint:'rgba(40,120,200,.35)',cast:[['ash',0.5,1,'r',0.1]],fx:'splash'},
+ dolphins:{bg:'sea_sunset',amb:['sparkle'],cast:[['dolphin',0.25,0.5,'r',0.15],['dolphin',0.75,0.45,'l',0.25],['ash',0.5,0.9,'r']]},
+ bird:{bg:'kingdom',amb:['birds'],cast:[['ash',0.32,1,'r'],['tiny',0.6,0.25,'l',0.7]]},
+ greenhouse:{bg:'greenhouse',amb:['rays','motes'],cast:[['ash',0.35,1,'r'],['lily',0.6,0.2],['mint',0.7,0.18],['root',0.8,0.18]]},
+ wedding:{bg:'wedding',amb:['petals','sparkle'],cast:[['tika',0.08,0.48,'r'],['ash',0.26,1,'r'],['antonio',0.44,1.05,'l'],['luciana',0.62,0.98,'l'],['king',0.8,1.08,'l'],['danielle',0.95,1.0,'l']]},
+ pigsty:{bg:'courtyard',amb:[],cast:[['ariana',0.5,1.1,'l',0,0.5]],fx:'mud'},
+ reveal:{bg:'moon',amb:['stars','fireflies'],cast:[['marissa',0.4,1.02,'r'],['ash',0.62,1,'l']]},
+ finale:{bg:'title',amb:['sparkle','petals','birds'],cast:[['tallulah',0.1,0.38,'r'],['sagi',0.24,0.3,'r'],['ash',0.42,1,'r'],['antonio',0.6,1.05,'l'],['tika',0.82,0.48,'l'],['azul_fly',0.3,0.4,'r',0.8]],fx:'confetti'}};
+let sceneKey=null,sceneT0=0;
+function tableau(key,r,t){const sc=SCENES[key]||SCENES.beach,s=G.s;if(key!==sceneKey){sceneKey=key;sceneT0=t;if(sc.fx==='splash')setTimeout(()=>GFX.burst(r.x+r.w/2,r.y+r.h*0.7,{n:40,colors:['#fff','#bff4ff'],shape:'drop',speed:380,up:250,life:1.2}),50);
+  if(sc.fx==='mud')setTimeout(()=>{GFX.burst(r.x+r.w/2,r.y+r.h*0.75,{n:40,colors:['#7a4a22','#9a6a3a','#5a3a1a'],shape:'drop',speed:360,up:260,life:1.2});GFX.shake(12);Sound.fx('splash')},300);
+  if(sc.fx==='confetti')setTimeout(()=>GFX.burst(r.x+r.w/2,r.y+r.h*0.2,{n:60,colors:['#ff8fb8','#ffd23f','#7fd3ff','#9be59b','#fff'],shape:'confetti',speed:340,g:200,life:2.2}),100)}
+ const st=t-sceneT0,z=1.1-0.06*GFX.E.out(Math.min(1,st/7));GFX.bg(sc.bg,{zoom:z,px:Math.sin(t*0.15)*8*s,fy:0.55});if(sc.tint)GFX.tint(sc.tint);
+ for(const a of sc.amb)GFX.amb(a,t,a==='zzz'?{x:r.x+r.w*0.4,y:r.y+r.h*0.4}:a==='sparkle'?{n:14}:{});
+ const gy=r.y+r.h*(sc.gy||0.95),hh=Math.min(r.h*0.7,r.w*(G.land?0.4:0.56));
+ if(sc.deck){const dy=gy-hh*0.02;const dg=cx.createLinearGradient(0,dy,0,G.H);dg.addColorStop(0,'#9a6a3e');dg.addColorStop(1,'#5a3a1e');cx.fillStyle=dg;cx.fillRect(0,dy,G.W,G.H-dy);
+  cx.strokeStyle='rgba(50,25,10,.5)';cx.lineWidth=2*s;for(let i=1;i<5;i++){const y=dy+(G.H-dy)*i/5;cx.beginPath();cx.moveTo(0,y);cx.lineTo(G.W,y);cx.stroke()}
+  cx.fillStyle='#7a4a24';cx.fillRect(0,dy-hh*0.42,G.W,7*s);for(let x=10*s;x<G.W;x+=40*s)cx.fillRect(x,dy-hh*0.42,6*s,hh*0.42)}
+ const items=[];sc.cast.forEach((c,i)=>{const[who,u,hr,face,lift,rot]=c,p=Math.max(0,Math.min(1,(st-0.15-i*0.12)/0.55)),e=GFX.E.out(p);if(p<=0)return;
+  const x=r.x+r.w*u+(1-e)*(u<0.5?-40:40)*s,h=hh*hr,y=gy-(lift||0)*hh-(1-e)*10*s;cx.save();cx.globalAlpha=e;
+  if(who==='ash'||who==='ashc')drawAsh(who==='ash'?'adult':'child',{},x,y,who==='ashc'?h*0.82:h,face==='l');
+  else if(who==='azul_fly'||who==='tiny')GFX.spr(who,x,y+Math.sin(t*2+i)*6*s,h,{face,center:1});
+  else if(who==='dolphin')GFX.spr(who,x,y+Math.sin(t*2+i)*8*s,h,{face,center:1,rot:Math.sin(t*1.5+i)*0.2});
+  else if(['chest','banner','lily','mint','root'].includes(who)){GFX.spr(who,x,y,h);if(who==='chest'){GFX.txt('A-S-H',x,y-h*0.55,Math.max(12,h*0.16),'#ffe9a0')}}
+  else GFX.actor(who,x,y,h,t,{face,rot:rot||0,ph:i});
+  cx.restore();items.push(who)});
+ if(sc.prop==='note'){const p=Math.min(1,st/1.5),x=r.x+r.w*lerp(0.36,0.6,p),y=gy-hh*0.6;cx.save();cx.translate(x,y);cx.rotate(-0.2+p*0.4);cx.fillStyle='#fffbea';GFX.rr(-18*s,-12*s,36*s,24*s,3*s);cx.fill();cx.strokeStyle='#c9a86a';cx.lineWidth=1.5*s;cx.stroke();cx.fillStyle='#d23a5a';GFX.heart(0,0,5*s);cx.restore()}
+ /* letterbox + vignette for a filmic feel */
+ GFX.vignette(0.3);const lb=Math.min(G.H*0.035,26*s);cx.fillStyle='rgba(8,4,16,.9)';cx.fillRect(0,0,G.W,lb);if(G.land)cx.fillRect(0,G.H-lb,G.W,lb);
+ GFX.drawParticles()}

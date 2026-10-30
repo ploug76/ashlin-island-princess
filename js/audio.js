@@ -1,11 +1,14 @@
 /* Original music + sound effects, all synthesized live with WebAudio (no audio files, nothing copied). */
 const Sound=(()=>{
- let ac=null,master,mus,sfx,on=true,cur=null,timer=null,tStart=0;
+ let ac=null,master,mus,sfx,bus,on=true,cur=null,timer=null,tStart=0;
  const NOTE={C:0,'C#':1,D:2,'D#':3,E:4,F:5,'F#':6,G:7,'G#':8,A:9,'A#':10,B:11,Bb:10,Eb:3,Ab:8};
  function hz(n){const m=/^([A-G][#b]?)(\d)$/.exec(n);if(!m)return 0;return 440*Math.pow(2,(NOTE[m[1]]+12*(+m[2]+1)-69)/12)}
  function init(){if(ac)return;const C=window.AudioContext||window.webkitAudioContext;if(!C)return;ac=new C();
   master=ac.createGain();master.gain.value=on?0.9:0;master.connect(ac.destination);
-  mus=ac.createGain();mus.gain.value=0.32;mus.connect(master);sfx=ac.createGain();sfx.gain.value=0.55;sfx.connect(master);
+  mus=ac.createGain();mus.gain.value=0.32;mus.connect(master);sfx=ac.createGain();sfx.gain.value=0.55;sfx.connect(master);bus=mus;
+  /* soft hall reverb (generated impulse) on music and effects */
+  try{const len=ac.sampleRate*2.2,ir=ac.createBuffer(2,len,ac.sampleRate);for(let c=0;c<2;c++){const d=ir.getChannelData(c);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,3.2)}
+   const cv=ac.createConvolver();cv.buffer=ir;const rg=ac.createGain();rg.gain.value=0.22;cv.connect(rg);rg.connect(master);mus.connect(cv);const sg=ac.createGain();sg.gain.value=0.5;sfx.connect(sg);sg.connect(cv)}catch(e){}
   try{const s=localStorage.getItem('aip-sound');if(s==='0')setOn(false)}catch(e){}}
  function unlock(){init();if(ac&&ac.state==='suspended')ac.resume()}
  function setOn(v){on=v;if(master)master.gain.setTargetAtTime(v?0.9:0,ac.currentTime,0.05);try{localStorage.setItem('aip-sound',v?'1':'0')}catch(e){}}
@@ -18,15 +21,15 @@ const Sound=(()=>{
  function noise(t,len,vol,dest,hp){const n=Math.floor(ac.sampleRate*len),b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*(1-i/n);
   const s=ac.createBufferSource();s.buffer=b;const f=ac.createBiquadFilter();f.type=hp?'highpass':'lowpass';f.frequency.value=hp||800;const g=ac.createGain();g.gain.value=vol;s.connect(f);f.connect(g);g.connect(dest);s.start(t)}
  const INST={
-  pluck:(f,t,l,v)=>{voice('sine',f,t,Math.min(l,0.25),v,mus,{d:0.12,s:0.25,r:0.3});voice('sine',f*4,t,0.05,v*0.18,mus,{d:0.04,s:0.1,r:0.06})},
-  bell:(f,t,l,v)=>{voice('sine',f,t,l,v*0.8,mus,{d:0.3,s:0.3,r:0.6});voice('sine',f*2.01,t,0.2,v*0.25,mus,{d:0.15,s:0.1,r:0.3})},
-  flute:(f,t,l,v)=>voice('triangle',f,t,l*0.95,v,mus,{a:0.04,d:0.1,s:0.75,r:0.12,lp:2600}),
-  pad:(f,t,l,v)=>{voice('triangle',f,t,l,v*0.5,mus,{a:0.25,d:0.3,s:0.8,r:0.5,lp:1200});voice('sine',f*1.5,t,l,v*0.2,mus,{a:0.3,d:0.3,s:0.8,r:0.5})},
-  bass:(f,t,l,v)=>voice('triangle',f,t,l*0.9,v,mus,{d:0.1,s:0.6,r:0.1,lp:700}),
-  pizz:(f,t,l,v)=>voice('sawtooth',f,t,0.12,v*0.5,mus,{d:0.08,s:0.15,r:0.12,lp:1500}),
-  hat:(f,t,l,v)=>noise(t,0.05,v*0.5,mus,6000),
-  kick:(f,t,l,v)=>voice('sine',140,t,0.12,v*1.2,mus,{slide:45,d:0.1,s:0.2,r:0.08}),
-  shaker:(f,t,l,v)=>noise(t,0.08,v*0.35,mus,4000)};
+  pluck:(f,t,l,v)=>{voice('sine',f,t,Math.min(l,0.25),v,bus,{d:0.12,s:0.25,r:0.3});voice('sine',f*4,t,0.05,v*0.18,bus,{d:0.04,s:0.1,r:0.06})},
+  bell:(f,t,l,v)=>{voice('sine',f,t,l,v*0.8,bus,{d:0.3,s:0.3,r:0.6});voice('sine',f*2.01,t,0.2,v*0.25,bus,{d:0.15,s:0.1,r:0.3})},
+  flute:(f,t,l,v)=>voice('triangle',f,t,l*0.95,v,bus,{a:0.04,d:0.1,s:0.75,r:0.12,lp:2600}),
+  pad:(f,t,l,v)=>{voice('triangle',f,t,l,v*0.5,bus,{a:0.25,d:0.3,s:0.8,r:0.5,lp:1200});voice('sine',f*1.5,t,l,v*0.2,bus,{a:0.3,d:0.3,s:0.8,r:0.5})},
+  bass:(f,t,l,v)=>voice('triangle',f,t,l*0.9,v,bus,{d:0.1,s:0.6,r:0.1,lp:700}),
+  pizz:(f,t,l,v)=>voice('sawtooth',f,t,0.12,v*0.5,bus,{d:0.08,s:0.15,r:0.12,lp:1500}),
+  hat:(f,t,l,v)=>noise(t,0.05,v*0.5,bus,6000),
+  kick:(f,t,l,v)=>voice('sine',140,t,0.12,v*1.2,bus,{slide:45,d:0.1,s:0.2,r:0.08}),
+  shaker:(f,t,l,v)=>noise(t,0.08,v*0.35,bus,4000)};
  /* tracks: tokens per step; '-' holds the previous note, '.' rest. All melodies original. */
  const T={
   island:{bpm:100,div:2,parts:[
@@ -73,11 +76,11 @@ const Sound=(()=>{
  for(const k in T)T[k].parts=T[k].parts.map(([i,v,s])=>({i,v,tok:s.trim().split(/\s+/)}));
  function play(name){init();if(!ac)return;if(cur&&cur.name===name)return;stop();const tr=T[name];if(!tr)return;
   const sd=60/tr.bpm/tr.div,len=Math.max(...tr.parts.map(p=>p.tok.length));let step=0,next=ac.currentTime+0.08;tStart=next;cur={name,sd,len,t0:next};
-  const g=ac.createGain();g.gain.value=1;g.connect(mus);cur.g=g;
-  timer=setInterval(()=>{if(!ac)return;while(next<ac.currentTime+0.25){for(const p of tr.parts){const tk=p.tok[step%p.tok.length];if(tk==='.'||tk==='-')continue;
+  const g=ac.createGain();g.gain.setValueAtTime(0.0001,next);g.gain.exponentialRampToValueAtTime(1,next+0.7);g.connect(mus);cur.g=g;
+  timer=setInterval(()=>{if(!ac)return;bus=g;while(next<ac.currentTime+0.25){for(const p of tr.parts){const tk=p.tok[step%p.tok.length];if(tk==='.'||tk==='-')continue;
      let l=1;while(p.tok[(step+l)%p.tok.length]==='-'&&l<16)l++;const f=tk==='x'?1:hz(tk);if(f)INST[p.i](f,next,l*sd,p.v)}
     step++;next+=sd}},60)}
- function stop(){if(timer)clearInterval(timer);timer=null;cur=null}
+ function stop(){if(timer)clearInterval(timer);timer=null;if(cur&&cur.g&&ac){const g=cur.g,t=ac.currentTime;try{g.gain.cancelScheduledValues(t);g.gain.setValueAtTime(Math.max(0.0001,g.gain.value),t);g.gain.exponentialRampToValueAtTime(0.0001,t+0.6);setTimeout(()=>{try{g.disconnect()}catch(e){}},1500)}catch(e){}}cur=null}
  function time(){return ac?ac.currentTime:0}
  function info(){return cur}
  function note(n,len=0.5,inst='bell',vol=0.4){init();if(!ac||!on)return;const f=hz(n);if(inst==='bell'){voice('sine',f,ac.currentTime,len,vol,sfx,{d:0.3,s:0.35,r:0.5});voice('sine',f*2.01,ac.currentTime,0.2,vol*0.2,sfx,{d:0.15,s:0.1,r:0.3})}}
@@ -93,6 +96,9 @@ const Sound=(()=>{
   chomp:()=>voice('square',120,ac.currentTime,0.08,0.12,sfx,{slide:70,d:0.05,s:0.3,r:0.05,lp:800}),
   page:()=>noise(ac.currentTime,0.12,0.18,sfx,2500),
   whoosh:()=>noise(ac.currentTime,0.3,0.3,sfx,1200),
+  sparkle:()=>{const t=ac.currentTime;['E7','B6','G#7'].forEach((n,i)=>voice('sine',hz(n),t+i*0.05,0.06,0.12,sfx,{d:0.05,s:0.2,r:0.2}))},
+  fanfare:()=>{const t=ac.currentTime;[['C5',0],['E5',0.12],['G5',0.24],['C6',0.36]].forEach(([n,d])=>{voice('triangle',hz(n),t+d,0.22,0.2,sfx,{d:0.1,s:0.5,r:0.3});voice('sine',hz(n)/2,t+d,0.22,0.12,sfx,{d:0.1,s:0.5,r:0.3})});voice('triangle',hz('C6'),t+0.5,0.8,0.2,sfx,{d:0.2,s:0.6,r:0.6});voice('triangle',hz('E6'),t+0.5,0.8,0.14,sfx,{d:0.2,s:0.6,r:0.6})},
+  swish:()=>noise(ac.currentTime,0.18,0.16,sfx,3200),
   stir:()=>voice('sine',520,ac.currentTime,0.12,0.12,sfx,{slide:620,d:0.08,s:0.3,r:0.08})};
  function fx(n){init();if(!ac||!on||!FX[n])return;try{FX[n]()}catch(e){}}
  return{track:n=>T[n],unlock,play,stop,fx,note,setOn,isOn:()=>on,time,info,hz}})();
