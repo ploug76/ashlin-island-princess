@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Ashlin as the Island Princess</title>
+<meta name="theme-color" content="#1b6fa8">
+<meta name="description" content="Ashlin as the Island Princess: a story adventure in 11 chapters.">
+<meta property="og:title" content="Ashlin as the Island Princess">
+<meta property="og:description" content="A story adventure in 11 chapters: the island, the prince, the palace, the sleeping herb and the lost princess.">
+<meta property="og:image" content="https://ploug76.github.io/ashlin-island-princess/cover.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+<canvas id="cv"></canvas>
+<!-- Studio logo hook: Peter has not picked a studio for this game yet. Set CONFIG.studioLogo in js/core.js
+     (e.g. 'logo-589.png' or 'logo-boh.png') and it shows tiny in the corner. Empty = nothing shown. -->
+<img id="studioLogo" alt="" hidden>
+<div id="ui">
+ <section id="title" class="screen">
+  <header id="titleHead"><h1>Ashlin<span>as the</span>Island Princess</h1></header>
+  <div id="titleBtns">
+   <button id="bPlay" class="big">PLAY</button>
+   <button id="bChapters">CHAPTERS</button>
+   <button id="bSound" class="small">Sound: On</button>
+  </div>
+ </section>
+ <section id="chapters" class="screen" hidden>
+  <h2>Chapters</h2>
+  <div id="chList"></div>
+  <button id="bChBack" class="small">Back</button>
+ </section>
+ <section id="story" class="screen" hidden>
+  <div id="storyBox">
+   <div id="spk"></div>
+   <div id="txt"></div>
+   <div class="row"><button id="bSkip" class="small">Skip</button><button id="bNext">Next</button></div>
+  </div>
+ </section>
+ <section id="howto" class="screen card" hidden>
+  <div class="cardIn"><h2 id="htTitle"></h2><p id="htText"></p><button id="bStart" class="big">START</button></div>
+ </section>
+ <div id="hud" hidden><span id="hudCh"></span><span id="hudInfo"></span><button id="bPause" aria-label="Pause">II</button></div>
+ <section id="pause" class="screen card" hidden>
+  <div class="cardIn"><h2>Paused</h2><button id="bResume" class="big">Resume</button><button id="bSkipGame">Skip this game</button><button id="bPChapters">Chapters</button><button id="bPSound" class="small">Sound: On</button></div>
+ </section>
+ <section id="result" class="screen card" hidden>
+  <div class="cardIn"><h2 id="rsTitle"></h2><div id="rsStars"></div><p id="rsText"></p><button id="bContinue" class="big">Continue</button></div>
+ </section>
+ <div id="toast"></div>
+</div>
+<script>window.GAMEV=1</script>
+<script src="js/kneerig.js?v=1"></script>
+<script src="js/rig.js?v=1"></script>
+<script src="js/audio.js?v=1"></script>
+<script src="js/art.js?v=1"></script>
+<script src="js/core.js?v=1"></script>
+<script src="js/games.js?v=1"></script>
+<script src="js/story.js?v=1"></script>
+<script src="js/main.js?v=1"></script>
+<script>if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
+</body>
+</html>
