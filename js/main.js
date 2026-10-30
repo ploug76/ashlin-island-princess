@@ -8,11 +8,11 @@ function chapterList(){const L=$('chList');L.innerHTML='';CHAPTERS.forEach((c,i)
   b.innerHTML='<em>'+(i+1)+'</em><b>'+(G.save.done[i]?'\u2605'.repeat(st)+'\u2606'.repeat(3-st):'')+'</b><span>'+c.title+'</span>';b.onclick=()=>startChapter(i);L.appendChild(b)})}
 function startChapter(i){G.ch=i;const c=CHAPTERS[i];G.game=null;hud(false);GFX.clearParticles();Sound.play(c.music||'story');story(c.intro,()=>howto())}
 function story(lines,then){setMode('story');show('story');storyQ={lines,i:0,then,shown:0};G.storyKey=lines[0][0];render()}
-/* speaker portraits come from the same painted cast; Ashlin's is cut from her own rig so a photo swap shows here too */
+/* speaker portraits come from the same painted cast; Ashlin's is cut from her own rig */
 const PORTRAIT={Antonio:'antonio',Frazer:'frazer','King Peter':'king','Queen Danielle':'danielle','Queen Ariana':'ariana',Luciana:'luciana','Queen Marissa':'marissa',Sagi:'sagi',Tika:'tika',Azul:'azul_stand',Tiny:'tiny',Tallulah:'tallulah',Rita:'rita',Sofia:'sofia',Gina:'gina'};
-const pc=document.createElement('canvas');pc.width=pc.height=120;
-function ashPortrait(v){const ch=G.ash[v];if(!ch)return'';const R=ch.R,h=R.head,x=pc.getContext('2d');x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,120,120);
- const k=120/(h[2]*3.2);x.setTransform(k,0,0,k,60-h[0]*k,64-h[1]*k);AshRig.draw(x,ch,{});return pc.toDataURL()}
+const pc=document.createElement('canvas');pc.width=pc.height=180;
+function ashPortrait(v){const ch=G.ash[v];if(!ch)return'';const R=ch.R,h=R.head,x=pc.getContext('2d');x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,180,180);
+ const k=180/(h[2]*3.0);x.setTransform(k,0,0,k,90-h[0]*k,98-h[1]*k);AshRig.draw(x,ch,{});return pc.toDataURL()}
 function render(){const q=storyQ,l=q.lines[q.i];G.storyKey=l[0];const who=l[1]===N?'':l[1];$('spk').textContent=who;q.full=l[2];q.shown=0;$('txt').textContent='';
  const im=$('portrait');let src='';if(who==='Ashlin')src=ashPortrait(CHAPTERS[G.ch].v||'adult');else if(PORTRAIT[who])src='art/'+PORTRAIT[who]+'.webp?v='+GAMEV;
  if(src){im.src=src;im.hidden=false}else im.hidden=true;

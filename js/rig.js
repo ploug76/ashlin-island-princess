@@ -1,7 +1,7 @@
 /* AshRig: Ashlin's jointed cutout. Same gait math as KneeRig (kneerig.js: 2-bone IK knees, planted foot moves at exactly
    ground speed, cadence walk ~1.7 / run ~2.8 steps/s, arms swing opposite the legs with elbows, 150 ms blend to standing),
    but the limbs are drawn as clean vector capsules from the joint list in assets/ashlin-*.json, and the image file is only
-   head + hair + torso + skirt. So a photo can replace the PNG (or just the face) and the legs/arms still animate. */
+   head + hair + torso + skirt. The body is Ashlin's painted storybook art (tools/build_ashlin_art.py); the legs/arms animate on top. */
 const AshRig=(()=>{
  const cache=new Map();
  function prep(R){let P=cache.get(R);if(P)return P;
@@ -11,16 +11,33 @@ const AshRig=(()=>{
   let cr=0;for(const g of legs){const l=g.l,R2=0.97*(g.L1+g.L2);for(let c=0;c<40;c+=0.25){if(Math.hypot(R.S/2+Math.abs(l.a[0]-l.h[0]),l.a[1]-l.h[1]-c)<=R2){cr=Math.max(cr,c);break}}}
   P={legs,arms:R.arms.map(m=>({m})),cr};cache.set(R,P);return P}
  const rot=(x,y,a)=>[x*Math.cos(a)-y*Math.sin(a),x*Math.sin(a)+y*Math.cos(a)];
- function seg(x,pts,r){x.beginPath();x.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)x.lineTo(pts[i][0],pts[i][1]);x.lineWidth=r*2;x.stroke()}
- function limb(x,R,chain,rad,end){/* outline pass then fill pass so joints are seamless */
-  const ow=R.outline||2;x.lineCap='round';x.lineJoin='round';
-  for(const pass of[0,1]){x.strokeStyle=pass?R.limb:R.line;const e=pass?0:ow;
-   for(let i=0;i<chain.length-1;i++)seg(x,[chain[i],chain[i+1]],rad[i]+e);
-   if(end){x.fillStyle=pass?R.limb:R.line;x.beginPath();x.arc(end[0],end[1],end[2]+e,0,7);x.fill()}}}
- function legDraw(x,R,L){const l=L.g.l,fa=[l.f[0]-l.a[0],l.f[1]-l.a[1]],fb=[l.f[2]-l.a[0],l.f[3]-l.a[1]],A=rot(fa[0],fa[1],L.fr),B=rot(fb[0],fb[1],L.fr);
-  limb(x,R,[[L.hx,L.hy],[L.kx,L.ky],[L.ax,L.ay]],[l.rt,l.rs]);limb(x,R,[[L.ax+A[0],L.ay+A[1]],[L.ax+B[0],L.ay+B[1]]],[l.rf])}
+ /* tapered capsule from a (radius r0) to b (radius r1) */
+ function tap(x,a,b,r0,r1){const g=Math.atan2(b[1]-a[1],b[0]-a[0]),PI=Math.PI;x.moveTo(a[0]+Math.sin(g)*r0,a[1]-Math.cos(g)*r0);x.lineTo(b[0]+Math.sin(g)*r1,b[1]-Math.cos(g)*r1);
+  x.arc(b[0],b[1],r1,g-PI/2,g+PI/2);x.lineTo(a[0]-Math.sin(g)*r0,a[1]+Math.cos(g)*r0);x.arc(a[0],a[1],r0,g+PI/2,g+PI*1.5);x.closePath()}
+ function shape(x,chain,rad,end,e){x.beginPath();for(let i=0;i<chain.length-1;i++)tap(x,chain[i],chain[i+1],rad[i]+e,rad[i+1]+e);
+  if(end){const rx=end[2]*1.15+e,ra=end[3]||0;x.moveTo(end[0]+rx*Math.cos(ra),end[1]+rx*Math.sin(ra));x.ellipse(end[0],end[1],rx,end[2]*0.9+e,ra,0,Math.PI*2)}}
+ /* painted-style limb: soft outline, skin fill, a light highlight down the front and a soft shade down the back; far limbs a touch darker.
+    rad = radius at each joint (tapers between them); end = [x,y,r,angle] for a hand */
+ function limb(x,R,chain,rad,end,far,col){const ow=R.outline||1,fill=col||R.limb;x.save();x.lineJoin='round';
+  x.fillStyle=R.line;shape(x,chain,rad,end,ow);x.fill('nonzero');
+  x.fillStyle=fill;shape(x,chain,rad,end,0);x.fill('nonzero');
+  x.save();shape(x,chain,rad,end,0);x.clip('nonzero');
+   if(R.hi){x.globalAlpha=0.45;x.fillStyle=R.hi;const off=chain.map((p,i)=>[p[0]+rad[i]*0.28,p[1]-rad[i]*0.15]);shape(x,off,rad.map(r=>r*0.32),null,0);x.fill('nonzero')}
+   if(R.lo){x.globalAlpha=0.35;x.fillStyle=R.lo;const off=chain.map((p,i)=>[p[0]-rad[i]*0.75,p[1]]);shape(x,off,rad.map(r=>r*0.5),null,0);x.fill('nonzero')}
+  x.restore();
+  if(far&&R.shade){x.globalAlpha=R.shade;x.fillStyle='#5a2a14';shape(x,chain,rad,end,ow);x.fill('nonzero')}
+  x.restore()}
+ function legDraw(x,R,L){const l=L.g.l,fa=[l.f[0]-l.a[0],l.f[1]-l.a[1]],fb=[l.f[2]-l.a[0],l.f[3]-l.a[1]],A=rot(fa[0],fa[1],L.fr),B=rot(fb[0],fb[1],L.fr),far=l.far;
+  const rk=l.rk||(l.rt+l.rs)/2,ra=l.ra||l.rs*0.78;
+  limb(x,R,[[L.ax+A[0],L.ay+A[1]],[L.ax+B[0],L.ay+B[1]]],[l.rf,l.rf*0.9],null,far,R.foot);
+  /* calf: a soft bulge a third of the way down the shin, toward the back of the leg */
+  const dx=L.ax-L.kx,dy=L.ay-L.ky,dl=Math.hypot(dx,dy)||1,dir=(L.ax>=L.kx?1:1),cb=l.rs*0.22,cxp=L.kx+dx*0.33+(dy/dl)*cb*-1*(R.back||1)*0+(-dy/dl)*0,cyp=L.ky+dy*0.33;
+  const nx=-dy/dl,ny=dx/dl,calf=[L.kx+dx*0.33-nx*cb,L.ky+dy*0.33-ny*cb];
+  limb(x,R,[[L.hx,L.hy],[L.kx,L.ky],calf,[L.ax,L.ay]],[l.rt,rk,l.rs*1.06,ra],null,far)}
  function armDraw(x,R,M){const m=M.g.m,w=rot(m.w[0]-m.e[0],m.w[1]-m.e[1],M.fa);const wx=M.ex+w[0],wy=M.ey+w[1];
-  limb(x,R,[[M.sx,M.sy],[M.ex,M.ey],[wx,wy]],[m.ru,m.rf],[wx,wy,m.hand||m.rf+1])}
+  const re=m.re||(m.ru+m.rf)/2*0.95,rw=m.rw||m.rf*0.72,g=Math.atan2(wy-M.ey,wx-M.ex),hl=(m.hand||m.rf)*1.05;
+  const fm=[M.ex+(wx-M.ex)*0.3,M.ey+(wy-M.ey)*0.3];
+  limb(x,R,[[M.sx,M.sy],[M.ex,M.ey],fm,[wx,wy]],[m.ru,re,m.rf,rw],[wx+Math.cos(g)*hl,wy+Math.sin(g)*hl,m.hand||m.rf,g],m.far)}
  /* o: per-character state. x: world x. k: world px per art px. flip: facing left. on: feet on the ground */
  function step(o,x,k,flip,R,on){return KneeRig.step(o,x,k,flip,R,on)}
  /* draw in art space (ctx already translated/scaled so 1 unit = 1 art px, top-left of the art at 0,0) */
@@ -29,16 +46,11 @@ const AshRig=(()=>{
   for(const L of Q.legs)if(L.g.l.far)legDraw(x,R,L);
   for(const L of Q.legs)if(!L.g.l.far)legDraw(x,R,L);
   x.drawImage(ch.img,0,Q.by,R.w,R.h);
-  if(ch.face&&ch.face.width){const h=R.head;x.save();x.beginPath();x.arc(h[0],h[1]+Q.by,h[2],0,7);x.clip();
-   const s=Math.max(2*h[2]/ch.face.width,2*h[2]/ch.face.height);x.drawImage(ch.face,h[0]-ch.face.width*s/2,h[1]+Q.by-ch.face.height*s/2,ch.face.width*s,ch.face.height*s);x.restore();
-   x.strokeStyle=R.line;x.lineWidth=R.outline||2;x.beginPath();x.arc(h[0],h[1]+Q.by,h[2],0,7);x.stroke()}
   for(const M of Q.arms)if(!M.g.m.far)armDraw(x,R,M);
   return Q}
- /* load one version: assets/ashlin-<v>.png + assets/ashlin-<v>.json, plus an optional face photo named in assets/photos.json */
- let photos=null;
- async function load(v){const q='?v='+(window.GAMEV||1);if(!photos)photos=await fetch('assets/photos.json'+q).then(r=>r.json()).catch(()=>({}));
+ /* load one version: assets/ashlin-<v>.json (joints + colours) and the painted body it names (head, hair, torso, dress; no limbs) */
+ async function load(v){const q='?v='+(window.GAMEV||1);
   const R=await (await fetch('assets/ashlin-'+v+'.json'+q)).json();
-  const img=new Image();img.src='assets/ashlin-'+v+'.png'+q;await img.decode().catch(()=>{});
-  const ch={R,img,face:null},fn=photos[v+'Face'];
-  if(fn){const f=new Image();f.onload=()=>{ch.face=f};f.src='assets/'+fn+q}return ch}
+  const img=new Image();img.src='assets/'+(R.art||'ashlin-'+v+'.png')+q;await img.decode().catch(()=>{});
+  return{R,img}}
  return{prep,step,draw,load}})();

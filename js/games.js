@@ -8,7 +8,7 @@ function hint(t,txt,y){if(t<4.5){cxa(Math.min(1,(4.5-t)*2));S.txt(txt,G.W/2,y||G
 function cxa(a){cx.globalAlpha=a}
 const GAMES={};
 /* ================= walk & run level (chapter 2 island as a child, chapter 5 palace as an adult) ================= */
-GAMES.walk=cfg=>{const isl=cfg.bg==='island',v=cfg.v,hs=v==='child'?0.82:1;
+GAMES.walk=cfg=>{const isl=cfg.bg==='island',v=cfg.v,hs0=v==='child'?0.92:1.1,HS=()=>hs0*(G.land?1.18:1);
  const g={axes:true,t:0,done:false,got:0,met:0,bumps:0,hx:0.8,hy:0,vx:0,vy:0,flip:false,o:{},items:cfg.items.map(i=>({...i,got:false})),
   friends:(cfg.friends||[]).map(f=>({...f,met:false,mt:0})),movers:(cfg.movers||[]).map(m=>({...m,x:m.x0,d:1,ph:Math.random(),y:0})),
   sagi:S.hopper(-0.2),tika:S.hopper(-1.2),azx:0.3,azy:0,max:cfg.items.length+(cfg.friends||[]).length,wasOn:true};
@@ -20,15 +20,15 @@ GAMES.walk=cfg=>{const isl=cfg.bg==='island',v=cfg.v,hs=v==='child'?0.82:1;
  g.key=c=>{if(c==='ArrowUp'||c==='KeyW'||c==='Space'){g.jump();return true}return false};
  g.padBtn=n=>{if(n==='a'){g.jump();return true}return false};
  g.up=p=>{if(p.tap||p.swipe==='up')g.jump()};
- g.update=dt=>{g.t+=dt;const{U,gy}=dims(),R=ch().R,walkV=R.vw/R.ground*0.95*hs,runV=R.vr/R.ground*1.05*hs;
+ g.update=dt=>{g.t+=dt;const{U,gy}=dims(),R=ch().R,walkV=R.vw/R.ground*0.95*HS(),runV=R.vr/R.ground*1.05*HS();
   let dir=axisX(),run=runHeld();
   for(const p of G.ptr.values()){if(performance.now()-p.st<110)continue;const cam=g.cam||0,hsx=g.hx*U-cam,dx=p.x-hsx;if(Math.abs(dx)>U*0.22){dir=Math.sign(dx);run=Math.abs(dx)>Math.min(U*1.3,G.W*0.3)}else dir=0;break}
   if(Math.abs(dir)<0.2)dir=0;const tv=dir?Math.sign(dir)*(run?runV:walkV):0;g.vx+=clamp(tv-g.vx,-4*dt,4*dt);if(dir)g.flip=dir<0;
   let nx=clamp(g.hx+g.vx*dt,0.3,cfg.len+0.5);if(g.hy<ground(nx)-0.02){nx=g.hx;g.vx=0}g.hx=nx;
   const gr=3.4;if(g.vy!==0||g.hy>ground(g.hx)){g.vy-=gr*dt;g.hy+=g.vy*dt;const gh=ground(g.hx);if(g.hy<=gh){g.hy=gh;g.vy=0}}
   const on=g.vy===0;if(on&&!g.wasOn)S.burst(g.hx*U-(g.cam||0),gy-g.hy*U,{n:6,colors:isl?['#d9b98a']:['#fff'],shape:'puff',speed:60,g:-10,life:0.4});g.wasOn=on;
-  stepAsh(v,g.o,g.hx*U,U*hs,g.flip,on);
-  for(const it of g.items)if(!it.got&&Math.abs(it.x-g.hx)<0.28&&Math.abs((g.hy+0.5*hs)-it.h)<0.5){it.got=true;g.got++;yay(it.x*U-g.cam,gy-it.h*U,'+1',{snd:'collect',colors:isl?['#ffd23f','#ffb03a','#fff']:['#ff8fb8','#fff','#ffd23f']})}
+  stepAsh(v,g.o,g.hx*U,U*HS(),g.flip,on);
+  for(const it of g.items)if(!it.got&&Math.abs(it.x-g.hx)<0.28&&Math.abs((g.hy+0.5*HS())-it.h)<0.5){it.got=true;g.got++;yay(it.x*U-g.cam,gy-it.h*U,'+1',{snd:'collect',colors:isl?['#ffd23f','#ffb03a','#fff']:['#ff8fb8','#fff','#ffd23f']})}
   for(const f of g.friends){if(!f.met&&Math.abs(f.x-g.hx)<0.7){f.met=true;f.mt=g.t;g.got++;yay(f.x*U-g.cam,gy-U,'Friend!',{shape:'heart',colors:['#ff7aa8','#ffb3cc']})}}
   for(const m of g.movers){m.ph+=dt*2.2;const f=m.ph%1,air=f<0.62;if(air){m.x+=m.d*(0.32/0.62)*dt;m.y=Math.sin(Math.PI*f/0.62)*0.07}else{m.y=0;if(m.x>m.x0+m.r)m.d=-1;else if(m.x<m.x0-m.r)m.d=1}m.flip=m.d<0;
    if(Math.abs(m.x-g.hx)<0.25&&g.hy<0.14&&(!g.bt||g.t-g.bt>0.8)){g.bt=g.t;g.bumps++;g.vx=-Math.sign(m.x-g.hx||1)*0.9;g.vy=1.2;g.hy=0.001;Sound.fx('squeak');oops(g.hx*U-g.cam,gy-U*0.5,'Eek! A rat!')}}
@@ -69,7 +69,7 @@ GAMES.walk=cfg=>{const isl=cfg.bg==='island',v=cfg.v,hs=v==='child'?0.82:1;
   const hop=(o,n,h)=>{const x=o.x*U-cam,q=S.squash(o);S.shadow(x,gy,S.sprW(n,h)*0.4*(1-o.y));S.spr(n,x,gy-o.y*U,h,{face:o.face,sy:q,sx:2-q})};
   hop(g.tika,'tika',U*(v==='child'?0.5:0.46));hop(g.sagi,'sagi',U*0.3);
   S.spr('azul_fly',g.azx*U-cam,gy-U*1.25+Math.sin(t*1.6)*8*s,U*0.42,{center:1,face:g.flip?'l':'r',rot:Math.sin(t*1.6)*0.05});
-  drawAsh(v,g.o,g.hx*U-cam,gy-g.hy*U,U*hs,g.flip);
+  drawAsh(v,g.o,g.hx*U-cam,gy-g.hy*U,U*HS(),g.flip);
   front(U,gy,cam,t);S.drawParticles();
   hint(g.t,G.land?'Hold where you want to go. Tap to jump!':'Hold where to go. Tap to jump!')};
  g.stars=()=>starsFrom((g.got-g.bumps*0.5)/g.max);

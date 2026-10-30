@@ -23,8 +23,7 @@ function stageRect(){if(G.mode==='story'){const b=$('storyBox').getBoundingClien
   return G.land?{x:0,y:0,w:Math.min(h.left,b.left)-6,h:G.H}:{x:0,y:h.bottom+4,w:G.W,h:b.top-h.bottom-10}}
  return{x:0,y:0,w:G.W,h:G.H}}
 /* ---------- Ashlin drawing ---------- */
-/* Ashlin is drawn into a small offscreen canvas first, then onto the scene with a soft white glow and a contact shadow,
-   so the white cutout reads as a clean, intentional silhouette on any painted background. */
+/* Ashlin is drawn into a small offscreen canvas first, then onto the scene with a contact shadow (painted art: no glow; R.glow adds one). */
 const ashC=document.createElement('canvas'),ashX=ashC.getContext('2d');
 function drawAsh(v,o,x,foot,hpx,flip,opt){const ch=G.ash[v];if(!ch||!ch.R)return;const R=ch.R,k=hpx/R.ground;opt=opt||{};
  const pad=16*G.s,bw=Math.ceil(R.w*k*2.4+pad*2),bh=Math.ceil(hpx*1.12+pad*2),d=G.dpr;
@@ -32,6 +31,7 @@ function drawAsh(v,o,x,foot,hpx,flip,opt){const ch=G.ash[v];if(!ch||!ch.R)return
  ashX.setTransform(1,0,0,1,0,0);ashX.clearRect(0,0,bw*d+2,bh*d+2);ashX.setTransform(d,0,0,d,0,0);
  ashX.translate(bw/2,bh-pad);ashX.scale(flip?-k:k,k);ashX.translate(-R.w/2,-R.ground);AshRig.draw(ashX,ch,o||{});
  if(!opt.noShadow&&window.GFX)GFX.shadow(x,foot,hpx*0.16,0.25);
+ if(!R.glow){cx.drawImage(ashC,0,0,bw*d,bh*d,x-bw/2,foot-(bh-pad),bw,bh);return k}
  cx.save();cx.shadowColor=R.glow||'rgba(255,255,255,.95)';cx.shadowBlur=Math.max(6,hpx*0.06);
  cx.drawImage(ashC,0,0,bw*d,bh*d,x-bw/2,foot-(bh-pad),bw,bh);cx.shadowColor='rgba(200,180,255,.55)';cx.shadowBlur=Math.max(10,hpx*0.14);cx.globalAlpha*=0.6;
  cx.drawImage(ashC,0,0,bw*d,bh*d,x-bw/2,foot-(bh-pad),bw,bh);cx.restore();return k}
