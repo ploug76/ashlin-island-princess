@@ -33,3 +33,9 @@ are all made from her cutout, so a new photo shows up there automatically too.
 ## Then bump the version (so phones pick it up)
 Run `python3 /workspace/sw-autoupdate/patch.py <repo>` and raise the number in `CACHE='ashlin-island-princess-vN'` in `sw.js`
 (and `window.GAMEV` in `index.html`, which busts the image cache). Commit, `git pull --rebase`, push.
+
+## Current photos (Oct 30 2026)
+- Child (ch1-2): `assets/ashlin-child-face-c1.png` (red-shirt photo, straightened, background removed)
+- Adult (ch3-11): `assets/ashlin-adult-face-f1.png` (restaurant photo, background removed)
+- Share/cover image: `cover-photo-v6.jpg`
+All photo files are re-encoded with no EXIF/GPS metadata.

@@ -1,8 +1,8 @@
 /* auto-update: HTML/JS/CSS/JSON always revalidated with the server (no stale copies); cache is the offline fallback */
 const __NC=r=>{try{const u=new URL(r.url);return u.origin==location.origin&&(r.mode=='navigate'||/(\/|\.html?|\.m?js|\.css|\.json)$/.test(u.pathname))?{cache:'no-cache'}:{}}catch(e){return {}}};
-const CACHE='ashlin-island-princess-v5';
-const FILES=['./','index.html','style.css?v=5','fonts/lilita.woff2','js/kneerig.js?v=5','js/rig.js?v=5','js/audio.js?v=5','js/art.js?v=5','js/gfx.js?v=5','js/core.js?v=5','js/games.js?v=5','js/story.js?v=5','js/main.js?v=5',
- 'assets/ashlin-child.png?v=5','assets/ashlin-child.json?v=5','assets/ashlin-adult.png?v=5','assets/ashlin-adult.json?v=5','assets/photos.json?v=5','manifest.json','icon-192.png'];
+const CACHE='ashlin-island-princess-v6';
+const FILES=['./','index.html','style.css?v=6','fonts/lilita.woff2','js/kneerig.js?v=6','js/rig.js?v=6','js/audio.js?v=6','js/art.js?v=6','js/gfx.js?v=6','js/core.js?v=6','js/games.js?v=6','js/story.js?v=6','js/main.js?v=6',
+ 'assets/ashlin-child.png?v=6','assets/ashlin-child.json?v=6','assets/ashlin-adult.png?v=6','assets/ashlin-adult.json?v=6','assets/photos.json?v=6','assets/ashlin-child-face-c1.png?v=6','assets/ashlin-adult-face-f1.png?v=6','manifest.json','icon-192.png'];
 /* the painted art (art/*.webp, ~5.7 MB) is cached the first time it loads (network first below), so install stays light */
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)));self.skipWaiting()});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(n=>n!==CACHE&&n.startsWith('ashlin-island-princess-')).map(n=>caches.delete(n)))).then(()=>self.clients.claim()))});
