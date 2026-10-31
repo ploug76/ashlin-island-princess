@@ -55,7 +55,7 @@ function drawTitle(t){const s=G.s,r=stageRect();GFX.bg('title',{zoom:1.06+0.02*M
  drawAsh('adult',{},c,gy,hh,false);box(c-hh*0.2,gy-hh,hh*0.4,hh);
  const tx=c+hh*0.48,th=hh*0.42;GFX.actor('tika',tx,gy,th,t,{face:'l'});box(tx-th*0.4,gy-th,th*0.8,th);
  const sx=c-hh*0.44,sh=hh*0.26;GFX.actor('sagi',sx,gy,sh,t,{face:'r',ph:1});box(sx-sh*0.6,gy-sh,sh*1.2,sh);
- const ax=c-hh*0.5+Math.sin(t*0.7)*hh*0.08,ay=gy-hh*0.72+Math.sin(t*1.6)*6*s,ah=hh*0.3;GFX.spr('azul_fly',ax,ay,ah,{face:'r',center:1});box(ax-ah*0.6,ay-ah*0.5,ah*1.2,ah);
+ const ax=c-hh*0.5+Math.sin(t*0.7)*hh*0.08,ay=gy-hh*0.72+Math.sin(t*1.6)*6*s,ah=hh*0.3;GFX.flySpr('azul_fly',ax,ay,ah,t,{face:'r',center:1});box(ax-ah*0.6,ay-ah*0.5,ah*1.2,ah);
  GFX.amb('motes',t);GFX.vignette(0.25);GFX.drawParticles();G.titleChars=items}
 function drawLoading(){cx.fillStyle='#1c1236';cx.fillRect(0,0,G.W,G.H)}
 /* ---------- main loop ---------- */

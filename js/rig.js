@@ -27,13 +27,26 @@ const AshRig=(()=>{
   x.restore();
   if(far&&R.shade){x.globalAlpha=R.shade;x.fillStyle='#5a2a14';shape(x,chain,rad,end,ow);x.fill('nonzero')}
   x.restore()}
- function legDraw(x,R,L){const l=L.g.l,fa=[l.f[0]-l.a[0],l.f[1]-l.a[1]],fb=[l.f[2]-l.a[0],l.f[3]-l.a[1]],A=rot(fa[0],fa[1],L.fr),B=rot(fb[0],fb[1],L.fr),far=l.far;
+ /* front view (standing: title, stories, idle in games): the foot points at the viewer, so it is drawn foreshortened in FRONT
+    of the ankle: instep coming down toward us, rounded toes at the bottom, turned out a little, on a sandal sole (adult) or
+    bare with little toe lines (child). The old side-view heel-to-toe capsule read as backwards feet (Peter, Oct 31). */
+ function footFront(x,R,L){const l=L.g.l,rf=l.rf,far=l.far,ra=l.ra||l.rs*0.78,sgn=far?-1:1,out=sgn*rf*0.38,
+   gy=L.ay+Math.max(l.f[1],l.f[3])+rf*0.9-l.a[1],fx=L.ax+out,ow=R.outline||1,sandal=R.foot&&R.foot!==R.limb,PI=Math.PI;
+  if(sandal){x.save();x.fillStyle=R.line;x.beginPath();x.ellipse(fx,gy-rf*0.42,rf*1.55+ow,rf*0.5+ow,sgn*0.08,0,PI*2);x.fill();
+   x.fillStyle=R.foot;x.beginPath();x.ellipse(fx,gy-rf*0.42,rf*1.55,rf*0.5,sgn*0.08,0,PI*2);x.fill();x.restore()}
+  const ty=gy-(sandal?rf*1.25:rf*0.95);
+  limb(x,R,[[L.ax,L.ay-rf*0.7],[L.ax+out*0.5,L.ay+rf*0.35],[fx,ty]],[ra*0.82,rf*0.95,rf*1.18],[fx,ty+rf*0.05,rf*1.12,sgn*0.12],far);
+  x.save();x.strokeStyle=R.line;x.globalAlpha=0.55;x.lineWidth=Math.max(0.35,rf*0.1);x.lineCap='round';
+  for(const d of[-0.45,0,0.45]){const tx=fx+d*rf*1.15;x.beginPath();x.moveTo(tx,ty+rf*0.55);x.lineTo(tx,ty+rf*0.95);x.stroke()}x.restore();
+  if(sandal){x.save();x.strokeStyle=R.foot;x.lineWidth=rf*0.5;x.lineCap='round';x.beginPath();
+   x.moveTo(fx-rf*1.15,ty-rf*0.05);x.quadraticCurveTo(fx,ty+rf*0.45,fx+rf*1.15,ty-rf*0.05);x.stroke();x.restore()}}
+ function legDraw(x,R,L,front){const l=L.g.l,fa=[l.f[0]-l.a[0],l.f[1]-l.a[1]],fb=[l.f[2]-l.a[0],l.f[3]-l.a[1]],A=rot(fa[0],fa[1],L.fr),B=rot(fb[0],fb[1],L.fr),far=l.far;
   const rk=l.rk||(l.rt+l.rs)/2,ra=l.ra||l.rs*0.78;
-  limb(x,R,[[L.ax+A[0],L.ay+A[1]],[L.ax+B[0],L.ay+B[1]]],[l.rf,l.rf*0.9],null,far,R.foot);
+  if(!front)limb(x,R,[[L.ax+A[0],L.ay+A[1]],[L.ax+B[0],L.ay+B[1]]],[l.rf,l.rf*0.9],null,far,R.foot);
   /* calf: a soft bulge a third of the way down the shin, toward the back of the leg */
   const dx=L.ax-L.kx,dy=L.ay-L.ky,dl=Math.hypot(dx,dy)||1,dir=(L.ax>=L.kx?1:1),cb=l.rs*0.22,cxp=L.kx+dx*0.33+(dy/dl)*cb*-1*(R.back||1)*0+(-dy/dl)*0,cyp=L.ky+dy*0.33;
   const nx=-dy/dl,ny=dx/dl,calf=[L.kx+dx*0.33-nx*cb,L.ky+dy*0.33-ny*cb];
-  limb(x,R,[[L.hx,L.hy],[L.kx,L.ky],calf,[L.ax,L.ay]],[l.rt,rk,l.rs*1.06,ra],null,far)}
+  limb(x,R,[[L.hx,L.hy],[L.kx,L.ky],calf,[L.ax,L.ay-(front?l.rf*0.5:0)]],[l.rt,rk,l.rs*1.06,ra],null,far);if(front)footFront(x,R,L)}
  function armDraw(x,R,M){const m=M.g.m,w=rot(m.w[0]-m.e[0],m.w[1]-m.e[1],M.fa);const wx=M.ex+w[0],wy=M.ey+w[1];
   const re=m.re||(m.ru+m.rf)/2*0.95,rw=m.rw||m.rf*0.72,g=Math.atan2(wy-M.ey,wx-M.ex),hl=(m.hand||m.rf)*1.05;
   const fm=[M.ex+(wx-M.ex)*0.3,M.ey+(wy-M.ey)*0.3];
@@ -73,8 +86,8 @@ const AshRig=(()=>{
   let lean=0,px=0,py=0;if(sd){lean=Q.A*((R.lean||0.035)+(R.leanRun||0.07)*Q.run);px=R.legs[0].h[0];py=R.legs[0].h[1]+Q.by}
   const up=()=>{if(lean){x.translate(px,py);x.rotate(lean);x.translate(-px,-py)}};
   x.save();up();for(const M of Q.arms)if(M.g.m.far)armDraw(x,R,M);x.restore();
-  for(const L of Q.legs)if(L.g.l.far)legDraw(x,R,L);
-  for(const L of Q.legs)if(!L.g.l.far)legDraw(x,R,L);
+  for(const L of Q.legs)if(L.g.l.far)legDraw(x,R,L,!sd);
+  for(const L of Q.legs)if(!L.g.l.far)legDraw(x,R,L,!sd);
   x.save();up();x.drawImage(ch.img,0,Q.by,R.w,R.h);
   for(const M of Q.arms)if(!M.g.m.far)armDraw(x,R,M);x.restore();
   return Q}

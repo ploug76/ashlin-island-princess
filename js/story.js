@@ -132,7 +132,9 @@ function tableau(key,r,t){const sc=SCENES[key]||SCENES.beach,s=G.s;if(key!==scen
  const items=[];sc.cast.forEach((c,i)=>{const[who,u,hr,face,lift,rot]=c,p=Math.max(0,Math.min(1,(st-0.15-i*0.12)/0.55)),e=GFX.E.out(p);if(p<=0)return;
   const x=r.x+r.w*u+(1-e)*(u<0.5?-40:40)*s,h=hh*hr,y=gy-(lift||0)*hh-(1-e)*10*s;cx.save();cx.globalAlpha=e;
   if(who==='ash'||who==='ashc')drawAsh(who==='ash'?'adult':'child',{},x,y,who==='ashc'?h*0.82:h,face==='l');
-  else if(who==='azul_fly'||who==='tiny')GFX.spr(who,x,y+Math.sin(t*2+i)*6*s,h,{face,center:1});
+  else if(who==='azul_fly'||who==='tiny')GFX.flySpr(who,x,y+Math.sin(t*2+i)*6*s,h,t+i*0.37,{face,center:1});
+  else if((who==='sagi'||who==='tika'||who==='rat')&&p<1&&((u<0.5)===(face!=='l'))){/* walks in on its legs while it slides into place */
+   const R=GFX.rigOf(who),d=(1-e)*40*s;if(R){const st0=4*R.pieces[0].L*Math.sin(R.r.A)*h/R.H;GFX.shadow(x,y,GFX.sprW(who,h)*0.42);GFX.walkSpr(who,x,y,h,{face,ph:2*Math.PI*d/st0,amt:Math.min(1,(1-e)*6)})}else GFX.actor(who,x,y,h,t,{face,rot:rot||0,ph:i})}
   else if(who==='dolphin')GFX.spr(who,x,y+Math.sin(t*2+i)*8*s,h,{face,center:1,rot:Math.sin(t*1.5+i)*0.2});
   else if(['chest','banner','lily','mint','root'].includes(who)){GFX.spr(who,x,y,h);if(who==='chest'){GFX.txt('A-S-H',x,y-h*0.55,Math.max(12,h*0.16),'#ffe9a0')}}
   else GFX.actor(who,x,y,h,t,{face,rot:rot||0,ph:i});

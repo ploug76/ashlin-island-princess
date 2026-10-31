@@ -44,6 +44,50 @@ const GFX=(()=>{
  function hopTo(o,tx,dt,maxStep,rate=1){if(o.ph<1){o.ph=Math.min(1,o.ph+dt/(o.dur/rate));const e=o.ph;o.x=o.from+(o.to-o.from)*e;o.y=Math.sin(Math.PI*e)*Math.min(1,Math.abs(o.to-o.from)/maxStep)*0.35;if(o.ph>=1){o.y=0;o.land=0}}
   else{o.land+=dt;const d=tx-o.x;if(Math.abs(d)>maxStep*0.25&&o.land>0.1/rate){o.from=o.x;o.to=o.x+Math.sign(d)*Math.min(Math.abs(d),maxStep);o.ph=0;o.face=d>0?'r':'l'}}}
  const squash=o=>o.land<0.12?1-0.12*Math.sin(o.land/0.12*Math.PI):1;
+ /* ---------- walking animals + flapping birds (Peter, Oct 31: animals walk with real leg steps, Azul flaps) ----------
+    The painted sprite is cut at runtime: legs (or wings) become separate pieces that swing around a hip (shoulder) pivot,
+    the rest of the picture is the body. Coordinates are sprite pixels. Leg pieces start a little above the cut line so the
+    seam stays hidden under the body. legs: [x0,x1,pivotX,phase,far]. Diagonal pairs move together (trot). */
+ const RIGS={
+  sagi:{cut:296,ov:16,A:0.34,AR:0.55,bob:0.006,legs:[[140,238,196,0,0],[238,326,275,Math.PI,1],[326,407,370,0,1],[407,492,440,Math.PI,0]]},
+  tika:{cut:340,ov:16,A:0.26,AR:0.42,bob:0.005,legs:[[45,131,95,0,0],[131,207,166,Math.PI,1],[207,287,250,0,1],[287,370,320,Math.PI,0]]},
+  rat:{cut:262,ov:12,A:0.42,AR:0.6,bob:0.008,legs:[[85,140,118,0,0],[240,340,262,Math.PI,0]]},
+  azul_fly:{wing:[[0,0],[400,0],[400,118],[393,212],[372,236],[322,246],[272,262],[226,281],[150,287],[0,287]],pv:[350,238],down:-0.85,sq:0.72,hz:2.6},
+  tiny:{wing:[[205,0],[505,0],[505,385],[330,385],[262,352],[226,330],[205,300]],pv:[262,338],down:0.95,sq:0.7,hz:4.2}};
+ const RC={};
+ function rigOf(n){if(RC[n]!==undefined)return RC[n];const r=RIGS[n],im=IMG[n];if(!r||!ok(n))return null;const W=im.naturalWidth,H=im.naturalHeight;
+  const mk=()=>{const c=document.createElement('canvas');c.width=W;c.height=H;return c},poly=(x,pts)=>{x.beginPath();pts.forEach((p,i)=>i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1]));x.closePath()};
+  const body=mk(),bx=body.getContext('2d');bx.drawImage(im,0,0);bx.globalCompositeOperation='destination-out';const out={W,H,body,r,pieces:[]};
+  if(r.legs){const bc=mk(),bb=bc.getContext('2d');bb.beginPath();for(const l of r.legs)bb.rect(l[0],r.cut,l[1]-l[0],r.band||14);bb.clip();bb.drawImage(im,0,0);out.band=bc;
+   for(const l of r.legs){bx.fillRect(l[0],r.cut,l[1]-l[0],H-r.cut);const c=mk(),x=c.getContext('2d');x.beginPath();x.rect(l[0],r.cut-r.ov,l[1]-l[0],H-r.cut+r.ov);x.clip();x.drawImage(im,0,0);
+    out.pieces.push({c,px:l[2],py:r.cut-r.ov*0.4,ph:l[3],far:l[4],L:H-r.cut})}}
+  if(r.wing){poly(bx,r.wing);bx.fill();const c=mk(),x=c.getContext('2d');poly(x,r.wing);x.clip();x.drawImage(im,0,0);out.wing=c}
+  RC[n]=out;return out}
+ /* walker state: x (world units), v, dist, ph (step phase), amt (0 stand .. 1 walk), run (0..1) */
+ function walker(x){return{x,y:0,v:0,ph:0,amt:0,run:0,face:'r',land:9}}
+ /* follow a target x: smooth start/stop, top speed vmax (world/s). hf = drawn height in world units (for step length) */
+ function walkTo(o,n,tx,dt,vmax,hf){const d=tx-o.x,ad=Math.abs(d),vd=ad>0.12?Math.sign(d)*Math.min(vmax,(ad-0.08)*3):0;
+  const a=(vd===0?6:4)*Math.max(1,vmax);o.v+=Math.max(-a*dt,Math.min(a*dt,vd-o.v));o.x+=o.v*dt;const sp=Math.abs(o.v);
+  if(sp>0.03)o.face=o.v>0?'r':'l';o.amt+=((sp>0.03?1:0)-o.amt)*Math.min(1,dt*(sp>0.03?8:5));o.run+=(Math.min(1,Math.max(0,sp/Math.max(0.01,vmax)*1.3-0.4))-o.run)*Math.min(1,dt*4);
+  const R=rigOf(n);if(R&&R.pieces.length){const A=R.r.A+(R.r.AR-R.r.A)*o.run,L=R.pieces[0].L;/* stance foot sweeps 2*L*sinA backwards = half a cycle */
+   o.ph+=2*Math.PI*sp*dt*R.H/(4*L*Math.sin(A)*hf)}
+  else o.ph+=sp*dt*12}
+ /* draw a walker with its feet at x,y, height h (px) */
+ function walkSpr(n,x,y,h,o={}){const R=rigOf(n);if(!R)return spr(n,x,y,h,o);const f=FACE[n]||'r',flip=o.face&&o.face!==f,k=h/R.H,r=R.r,amt=o.amt||0,A=(r.A+(r.AR-r.A)*(o.run||0))*amt;
+  const bob=-amt*r.bob*R.H*(0.5-0.5*Math.cos(2*(o.ph||0)))*(1+(o.run||0));
+  cx.save();if(o.alpha!==undefined)cx.globalAlpha*=o.alpha;cx.translate(x,y);cx.scale(flip?-k:k,k);cx.translate(-R.W/2,-R.H);
+  const leg=P=>{const q=(o.ph||0)+P.ph,th=A*Math.sin(q),lift=amt*Math.max(0,-Math.cos(q))*P.L*(0.13+0.08*(o.run||0));
+   cx.save();cx.translate(P.px,P.py-lift);cx.rotate(th);cx.translate(-P.px,-P.py);if(P.far){cx.filter='brightness(0.9)'}cx.drawImage(P.c,0,0);cx.restore()};
+  /* static strip just under the belly fills the little wedge that opens between two legs swinging apart */
+  cx.translate(0,bob);if(R.band&&amt>0)cx.drawImage(R.band,0,0);for(const P of R.pieces)if(P.far)leg(P);for(const P of R.pieces)if(!P.far)leg(P);
+  cx.drawImage(R.body,0,0);cx.restore()}
+ /* flying bird with flapping wing; t = time (s). Same options as spr (face, center, rot, alpha). */
+ function flySpr(n,x,y,h,t,o={}){const R=rigOf(n);if(!R||!R.wing)return spr(n,x,y,h,o);const f=FACE[n]||'r',flip=o.face&&f!=='f'&&o.face!==f,k=h/R.H,r=R.r;
+  const c=((t*(o.hz||r.hz))%1+1)%1,w=c<0.42?(1-Math.cos(Math.PI*c/0.42))/2:(1+Math.cos(Math.PI*(c-0.42)/0.58))/2;/* quick downstroke, slower upstroke */
+  const lift=(w-0.5)*-0.035*R.H;
+  cx.save();if(o.alpha!==undefined)cx.globalAlpha*=o.alpha;cx.translate(x,y);if(o.rot)cx.rotate(o.rot);cx.scale(flip?-k:k,k);cx.translate(-R.W/2,o.center?-R.H/2:-R.H);cx.translate(0,lift);
+  cx.drawImage(R.body,0,0);cx.save();cx.translate(r.pv[0],r.pv[1]);cx.rotate(r.down*w);cx.scale(1,1-(1-r.sq)*w);cx.translate(-r.pv[0],-r.pv[1]);cx.drawImage(R.wing,0,0);cx.restore();
+  cx.restore();return R.W*k}
  /* ---------- particles ---------- */
  let PS=[];
  function burst(x,y,o={}){const n=o.n||14,cols=o.colors||['#fff6a0','#ffd23f','#ff8fb8','#ffffff'];for(let i=0;i<n;i++){const a=(o.dir!==undefined?o.dir+(Math.random()-0.5)*(o.spread||1.2):Math.random()*Math.PI*2),sp=(o.speed||220)*(0.4+Math.random()*0.8)*G.s;
@@ -106,4 +150,4 @@ const GFX=(()=>{
   for(let i=0;i<7;i++){const a=-Math.PI/2+(i-3)*0.32*dir;cx.save();cx.rotate(a+Math.PI/2);cx.beginPath();cx.moveTo(0,0);cx.quadraticCurveTo(h*0.22,-h*0.5,0,-h*(0.75+0.25*Math.cos((i-3)*0.5)));cx.quadraticCurveTo(-h*0.22,-h*0.5,0,0);cx.fill();cx.restore()}cx.restore()}
  let shakeT=0,shakeA=0;function shake(a=8){shakeA=Math.max(shakeA,a*G.s);shakeT=0.35}
  function shakeApply(dt){if(shakeT>0){shakeT-=dt;const k=Math.max(0,shakeT/0.35);cx.translate((Math.random()-0.5)*shakeA*k*2,(Math.random()-0.5)*shakeA*k*2)}else shakeA=0}
- return{IMG,load,ok,E,bg,mapOf,at,strip,stripV,spr,sprW,actor,shadow,hopper,hopTo,squash,burst,popText,stepParticles,drawParticles,clearParticles,star4,heart,txt,glowDot,bubble,rr,panel,vignette,tint,amb,fern,shake,shakeApply,pickBg,last:()=>lastMap,progress:()=>loaded/total}})();
+ return{IMG,load,ok,E,bg,mapOf,at,strip,stripV,spr,sprW,actor,shadow,hopper,hopTo,squash,walker,walkTo,walkSpr,flySpr,rigOf,burst,popText,stepParticles,drawParticles,clearParticles,star4,heart,txt,glowDot,bubble,rr,panel,vignette,tint,amb,fern,shake,shakeApply,pickBg,last:()=>lastMap,progress:()=>loaded/total}})();

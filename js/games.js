@@ -14,7 +14,7 @@ GAMES.walk=cfg=>{const isl=cfg.bg==='island',v=cfg.v,hs0=v==='child'?0.92:1.1,HS
     Space/Up jump, X/E/Enter action. Gamepad: stick or d-pad, A jump, X/B action, stick pushed far or RB = run. */
  const g={axes:true,pad:true,t:0,done:false,got:0,met:0,bumps:0,hx:0.8,hy:0,vx:0,vy:0,flip:false,o:{},items:cfg.items.map(i=>({...i,got:false})),
   friends:(cfg.friends||[]).map(f=>({...f,met:false,mt:0})),movers:(cfg.movers||[]).map(m=>({...m,x:m.x0,d:1,ph:Math.random(),y:0,gone:0})),
-  sagi:S.hopper(-0.2),tika:S.hopper(-1.2),azx:0.3,azy:0,max:cfg.items.length+(cfg.friends||[]).length,wasOn:true,
+  sagi:S.walker(-0.2),tika:S.walker(-1.2),azx:0.3,azy:0,max:cfg.items.length+(cfg.friends||[]).length,wasOn:true,
   coy:0,jbuf:0,jhold:false,onG:true,cam:0,camI:false,say:null};
  const ch=()=>G.ash[v],SR=()=>{const c=ch();return c.side?c.side.R:c.R};
  /* landscape: ground a bit higher so the JUMP / ACTION buttons sit below everyone's feet */
@@ -56,10 +56,11 @@ GAMES.walk=cfg=>{const isl=cfg.bg==='island',v=cfg.v,hs0=v==='child'?0.92:1.1,HS
   stepAsh(v,g.o,g.hx*U,U*HS(),g.flip,on);
   for(const it of g.items)if(!it.got&&Math.abs(it.x-g.hx)<0.28&&it.h>=g.hy-0.05&&it.h<=g.hy+hs0*0.78)collect(it);
   g.say=null;for(const f of g.friends)if(!f.met&&near(f.x,1.0))g.say=f;
-  for(const m of g.movers){m.ph+=dt*(m.gone?4:2.2);const f=m.ph%1,air=f<0.62;if(air){m.x+=m.d*(m.gone?1.6:0.32/0.62)*dt;m.y=Math.sin(Math.PI*f/0.62)*0.07}else{m.y=0;if(!m.gone){if(m.x>m.x0+m.r)m.d=-1;else if(m.x<m.x0-m.r)m.d=1}}m.flip=m.d<0;if(m.gone)continue;
+  for(const m of g.movers){/* rats scurry on their legs (no hopping) */const sp=m.gone?1.6:0.34;m.x+=m.d*sp*dt;m.y=0;m.wp=(m.wp||0)+2*Math.PI*sp*dt*345/(4*83*Math.sin(m.gone?0.6:0.42)*0.2);
+   if(!m.gone){if(m.x>m.x0+m.r)m.d=-1;else if(m.x<m.x0-m.r)m.d=1}m.flip=m.d<0;if(m.gone)continue;
    if(Math.abs(m.x-g.hx)<0.25&&g.hy<0.14&&(!g.bt||g.t-g.bt>0.8)){g.bt=g.t;g.bumps++;g.vx=-Math.sign(m.x-g.hx||1)*0.9;g.vy=2.4;g.hy+=0.001;g.onG=false;g.coy=0;Sound.fx('squeak');oops(g.hx*U-g.cam,gy-U*0.5,'Eek! A rat!')}}
-  /* friends follow in hops: they only move while in the air, so their feet never slide */
-  const lead=g.hx,rate=1+clamp(Math.abs(g.vx)-0.5,0,1)*0.6;S.hopTo(g.sagi,lead-0.7,dt,0.5,rate);S.hopTo(g.tika,g.sagi.x-0.8,dt,0.62,rate);
+  /* friends walk after her (real leg steps, step length matched to their speed so feet do not slide; Peter Oct 31) */
+  const fv=Math.max(walkV,Math.abs(g.vx))*1.15+0.05,lead=g.hx-(g.flip?-0.7:0.7);S.walkTo(g.sagi,'sagi',lead,dt,fv,0.3);S.walkTo(g.tika,'tika',g.sagi.x-(g.sagi.face==='l'?-0.8:0.8),dt,fv,v==='child'?0.5:0.46);
   g.azx=lerp(g.azx,g.hx+(g.flip?-0.5:0.5),Math.min(1,dt*1.5));
   {const tc=clamp(g.hx*U-G.W*(g.flip?0.56:0.36),0,cfg.len*U+U-G.W);if(!g.camI){g.cam=tc;g.camI=true}else g.cam+=(tc-g.cam)*Math.min(1,dt*3.2)}
   hudInfo((isl?'Mangoes':'Flowers & friends')+' '+g.got+' / '+g.max);
@@ -91,10 +92,10 @@ GAMES.walk=cfg=>{const isl=cfg.bg==='island',v=cfg.v,hs0=v==='child'?0.92:1.1,HS
    S.glowDot(x,y,0.16*U,'rgba(255,240,170,.55)');S.spr(isl?'mango':'flower',x,y,0.17*U,{center:1,rot:Math.sin(t*1.5+it.x)*0.15});const p=(t*0.7+it.x)%1;if(p<0.25){cx.fillStyle='rgba(255,255,255,'+(1-p*4)+')';S.star4(x+0.06*U,y-0.06*U,10*s*Math.sin(p*4*Math.PI))}}
   for(const f of g.friends){const x=f.x*U-cam;if(x<-U||x>G.W+U)continue;if(f.who==='tallulah')S.actor('tallulah',x,gy,U*0.42,t,{face:'l'});else S.actor(f.who,x,gy,U*0.98,t,{ph:f.x});
    if(f.met&&g.t-f.mt<2.4)S.bubble(x,gy-(f.who==='tallulah'?U*0.5:U*1.05),f.line)}
-  for(const m of g.movers){const x=m.x*U-cam;if(x>-U&&x<G.W+U){S.shadow(x,gy,U*0.1);S.spr('rat',x,gy-m.y*U,U*0.2,{face:m.flip?'l':'r'})}}
-  const hop=(o,n,h)=>{const x=o.x*U-cam,q=S.squash(o);S.shadow(x,gy,S.sprW(n,h)*0.4*(1-o.y));S.spr(n,x,gy-o.y*U,h,{face:o.face,sy:q,sx:2-q})};
+  for(const m of g.movers){const x=m.x*U-cam;if(x>-U&&x<G.W+U){S.shadow(x,gy,U*0.1);S.walkSpr('rat',x,gy,U*0.2,{face:m.flip?'l':'r',ph:m.wp||0,amt:1,run:m.gone?1:0})}}
+  const hop=(o,n,h)=>{const x=o.x*U-cam;S.shadow(x,gy,S.sprW(n,h)*0.4);S.walkSpr(n,x,gy,h,o)};
   hop(g.tika,'tika',U*(v==='child'?0.5:0.46));hop(g.sagi,'sagi',U*0.3);
-  S.spr('azul_fly',g.azx*U-cam,gy-U*1.25+Math.sin(t*1.6)*8*s,U*0.42,{center:1,face:g.flip?'l':'r',rot:Math.sin(t*1.6)*0.05});
+  S.flySpr('azul_fly',g.azx*U-cam,gy-U*1.25+Math.sin(t*1.6)*8*s,U*0.42,t,{center:1,face:g.flip?'l':'r',rot:Math.sin(t*1.6)*0.05});
   drawAsh(v,g.o,g.hx*U-cam,gy-g.hy*U,U*HS(),g.flip);
   front(U,gy,cam,t);S.drawParticles();
   if(g.say){const x=g.say.x*U-cam;S.bubble(x,gy-(g.say.who==='tallulah'?U*0.5:U*1.05),'Tap ACTION to say hi!')}
@@ -216,7 +217,7 @@ GAMES.rats=()=>{const g={t:0,done:false,stop:0,bad:0,total:18,spawned:0,rats:[],
   for(const r of g.rats){let tx,ty;if(r.st===1){tx=r.x+(r.x<G.W/2?-1:1)*400*s;ty=-80*s;r.spin=(r.spin||0)+dt*12}else if(r.st===2){tx=r.x;ty=G.H+100*s}else{[tx,ty]=bowl(r.b)}
    const dx=tx-r.x,dy=ty-r.y,d=Math.hypot(dx,dy);
    if(r.st){const v=r.v*2.4;if(d>1){const m=Math.min(d,v*dt);r.x+=dx/d*m;r.y+=dy/d*m}}
-   else{/* hops: moves only while airborne */r.ph+=dt*2.6;const f=r.ph%1;if(f<0.7&&d>1){const m=Math.min(d,r.v/0.7*dt);r.x+=dx/d*m;r.y+=dy/d*m;r.hy=Math.sin(Math.PI*f/0.7)*14*s}else r.hy=0;r.face=dx<0?'l':'r'}
+   else{/* scurries on its legs; step phase follows the distance so feet do not slide */r.hy=0;if(d>1){const m=Math.min(d,r.v*dt);r.x+=dx/d*m;r.y+=dy/d*m;r.ph+=2*Math.PI*m/(4*83*Math.sin(0.42)*50*s/345);r.amt=1}else r.amt=Math.max(0,(r.amt||0)-dt*5);if(Math.abs(dx)>1)r.face=dx<0?'l':'r'}
    if(!r.st&&d<14*s){r.st=2;g.bad++;g.sleepy[r.b]=g.t;Sound.fx('bad');S.burst(r.x,r.y,{n:16,colors:['#ff9a3a','#ffc06a'],shape:'puff',speed:90,g:-40,life:0.9});S.popText(r.x,r.y-50*s,'Oh no, the herb!','#ffd0a0',24)}}
   g.rats=g.rats.filter(r=>r.y>-60*s&&r.y<G.H+60*s);hudInfo('Stopped '+g.stop+' / '+g.total);if(g.spawned>=g.total&&!g.rats.some(r=>!r.st))g.done=true};
  g.draw=()=>{const s=G.s,t=G.t;S.bg('courtyard');S.amb('motes',t,{n:10});S.amb('birds',t,{y:0.06,n:2});
@@ -225,7 +226,7 @@ GAMES.rats=()=>{const g={t:0,done:false,stop:0,bad:0,total:18,spawned:0,rats:[],
   for(let i=0;i<3;i++){const[x,y]=bowl(i);S.shadow(x,y+10*s,46*s);S.spr('bowl',x,y+16*s,52*s);cx.fillStyle='#e9a84a';cx.beginPath();cx.ellipse(x,y-14*s,36*s,8*s,0,0,TAU);cx.fill();
    for(let k=0;k<6;k++){cx.fillStyle=['#ff6a5a','#ffd23f','#7fd36a'][k%3];cx.beginPath();cx.arc(x-24*s+k*10*s,y-16*s+(k%2)*3*s,4*s,0,TAU);cx.fill()}
    const sl=g.sleepy[i]&&g.t-g.sleepy[i]<3;S.actor(who[i],x+52*s,y+14*s,hh[i]*s*(G.land?1.1:1),t,{face:'l',rot:sl?-0.25:0,ph:i});if(sl)S.amb('zzz',t,{x:x+60*s,y:y-hh[i]*s})}
-  for(const r of g.rats){S.shadow(r.x,r.y,16*s,0.22);S.spr('rat',r.x,r.y-r.hy,50*s,{face:r.st===1?(r.x<G.W/2?'l':'r'):r.face,rot:r.st===1?r.spin:0})}
+  for(const r of g.rats){S.shadow(r.x,r.y,16*s,0.22);if(r.st===1)S.spr('rat',r.x,r.y-r.hy,50*s,{face:r.x<G.W/2?'l':'r',rot:r.spin});else S.walkSpr('rat',r.x,r.y-r.hy,50*s,{face:r.face,ph:r.ph,amt:r.amt||0})}
   S.actor('ariana',G.land?G.W*0.94:G.W*0.88,G.H*(G.land?0.56:0.5),G.H*(G.land?0.36:0.19),t,{face:'l'});
   S.drawParticles();hint(g.t,'Tap the rats before they reach the bowls!')};
  g.stars=()=>starsFrom(g.stop/g.total);g.qa=()=>({targets:g.rats.filter(r=>!r.st).map(r=>[r.x,r.y-14*G.s])});return g};
