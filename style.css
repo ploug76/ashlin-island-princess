@@ -77,11 +77,15 @@ body.land .cardIn{max-height:94vh;padding:14px 20px;gap:7px}body.land #htImg{hei
 #toast.on{opacity:1;transform:translate(-50%,0)}
 #studioLogo{position:fixed;right:8px;bottom:8px;width:44px;opacity:.85;z-index:5;pointer-events:none}
 
-/* JUMP (bottom-right) and ACTION (bottom-left): same size, mirrored, below Ashlin's feet (walking chapters only) */
-#pad{position:absolute;inset:0;pointer-events:none}#pad[hidden]{display:none!important}
-#pad .pb{position:absolute;bottom:calc(env(safe-area-inset-bottom,0px) + 22px);width:clamp(84px,11vh,108px);height:clamp(84px,11vh,108px);border-radius:50%;padding:0;
- font-size:clamp(17px,2.4vh,21px);letter-spacing:1px;color:#fff;border:3px solid rgba(255,255,255,.8);text-shadow:0 2px 3px rgba(0,0,0,.6);opacity:.93;touch-action:none;pointer-events:auto}
-#bJump{right:calc(env(safe-area-inset-right,0px) + 16px);background:radial-gradient(circle at 35% 30%,#d8ffd0,#38b040 55%,#0a5a12);box-shadow:0 0 18px rgba(80,208,96,.6),inset 0 -6px 12px rgba(0,0,0,.4)}
-#bAct{left:calc(env(safe-area-inset-left,0px) + 16px);background:radial-gradient(circle at 35% 30%,#ffe0b0,#ff8a1a 55%,#a03a00);box-shadow:0 0 22px rgba(255,154,58,.6),inset 0 -6px 12px rgba(0,0,0,.4)}
+/* Peter Oct 30 9:40 PM: cluster like his screenshot - JUMP big orange far bottom-right, ACTION smaller green up-left of it (walking chapters only, below Ashlin's feet) */
+#pad{position:absolute;inset:0;pointer-events:none;--J:clamp(92px,26vw,124px)}#pad[hidden]{display:none!important}
+body.land #pad{--J:clamp(66px,21vh,86px)}
+#pad .pb{position:absolute;border-radius:50%;padding:0;font-weight:900;letter-spacing:1px;color:#fff;border:3px solid #fff;
+ text-shadow:-2px -2px 0 #000,2px -2px 0 #000,-2px 2px 0 #000,2px 2px 0 #000,0 2px 0 #000,0 -2px 0 #000,2px 0 0 #000,-2px 0 0 #000;opacity:.95;touch-action:none;pointer-events:auto}
+#bJump{width:var(--J);height:var(--J);font-size:calc(var(--J)*0.24);right:calc(env(safe-area-inset-right,0px) + 16px);bottom:calc(env(safe-area-inset-bottom,0px) + 22px);
+ background:radial-gradient(circle at 35% 30%,#ffe0b0,#ff8a1a 55%,#a03a00);box-shadow:0 0 22px rgba(255,154,58,.6),inset 0 -6px 12px rgba(0,0,0,.4)}
+#bAct{width:calc(var(--J)*0.84);height:calc(var(--J)*0.84);font-size:calc(var(--J)*0.17);right:calc(env(safe-area-inset-right,0px) + 30px + var(--J));bottom:calc(env(safe-area-inset-bottom,0px) + 22px + var(--J)*0.42);
+ background:radial-gradient(circle at 35% 30%,#d8ffd0,#38b040 55%,#0a5a12);box-shadow:0 0 18px rgba(80,208,96,.6),inset 0 -6px 12px rgba(0,0,0,.4)}
 #pad .pb.on{transform:scale(.92);filter:brightness(1.3)}
-body.land #pad .pb{width:clamp(66px,17vh,80px);height:clamp(66px,17vh,80px);bottom:calc(env(safe-area-inset-bottom,0px) + 6px);font-size:clamp(14px,3.6vh,17px)}
+body.land #bJump{right:calc(env(safe-area-inset-right,0px) + 14px);bottom:calc(env(safe-area-inset-bottom,0px) + 6px)}
+body.land #bAct{width:calc(var(--J)*0.82);height:calc(var(--J)*0.82);right:calc(env(safe-area-inset-right,0px) + 24px + var(--J));bottom:calc(env(safe-area-inset-bottom,0px) + 6px + var(--J)*0.18)}

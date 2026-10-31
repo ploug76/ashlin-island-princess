@@ -10,7 +10,7 @@ const GAMES={};
 /* ================= walk & run level (chapter 2 island as a child, chapter 5 palace as an adult) ================= */
 GAMES.walk=cfg=>{const isl=cfg.bg==='island',v=cfg.v,hs0=v==='child'?0.92:1.1,HS=()=>hs0*(G.land?1.18:1);
  /* Controls (Peter's standard, same as Hair Mob): swipe & hold anywhere to walk (swipe farther = run), swipe up = jump,
-    JUMP button bottom-right (hold = higher), ACTION button bottom-left (say hi / pick up / shoo a rat). Keys: arrows/WASD, Shift run,
+    JUMP button bottom-right (hold = higher), ACTION button just up-left of it (say hi / pick up / shoo a rat). Keys: arrows/WASD, Shift run,
     Space/Up jump, X/E/Enter action. Gamepad: stick or d-pad, A jump, X/B action, stick pushed far or RB = run. */
  const g={axes:true,pad:true,t:0,done:false,got:0,met:0,bumps:0,hx:0.8,hy:0,vx:0,vy:0,flip:false,o:{},items:cfg.items.map(i=>({...i,got:false})),
   friends:(cfg.friends||[]).map(f=>({...f,met:false,mt:0})),movers:(cfg.movers||[]).map(m=>({...m,x:m.x0,d:1,ph:Math.random(),y:0,gone:0})),
@@ -98,7 +98,7 @@ GAMES.walk=cfg=>{const isl=cfg.bg==='island',v=cfg.v,hs0=v==='child'?0.92:1.1,HS
   drawAsh(v,g.o,g.hx*U-cam,gy-g.hy*U,U*HS(),g.flip);
   front(U,gy,cam,t);S.drawParticles();
   if(g.say){const x=g.say.x*U-cam;S.bubble(x,gy-(g.say.who==='tallulah'?U*0.5:U*1.05),'Tap ACTION to say hi!')}
-  hint(g.t,G.land?'Swipe & hold anywhere to walk (farther = run).\nJUMP is on the right, ACTION on the left.':'Swipe & hold to walk\n(swipe farther = run).\nJUMP right, ACTION left.',G.land?G.H*0.2:G.H*0.15,7)};
+  hint(g.t,G.land?'Swipe & hold anywhere to walk (farther = run).\nJUMP and ACTION are bottom-right.':'Swipe & hold to walk\n(swipe farther = run).\nJUMP + ACTION bottom-right.',G.land?G.H*0.2:G.H*0.15,7)};
  g.stars=()=>starsFrom((g.got-g.bumps*0.5)/g.max);
  g.qa=()=>{const{U,gy}=dims();return{hx:g.hx,len:cfg.len,obst:cfg.obst,U,gy,cam:g.cam,hy:g.hy,vx:g.vx,o:{u:g.o._ku,a:g.o._ka,v:g.o._kv,D:g.o._kD,f:g.o._kf},
   hop:[g.sagi.x,g.sagi.ph,g.tika.x,g.tika.ph],onG:g.onG,vy:g.vy,flip:g.flip,side:!!g.o._side,gnd:ground(g.hx),fr:g.friends.filter(f=>!f.met).map(f=>f.x),mv:g.movers.filter(m=>!m.gone).map(m=>m.x),
