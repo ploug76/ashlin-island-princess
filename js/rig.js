@@ -38,19 +38,52 @@ const AshRig=(()=>{
   const re=m.re||(m.ru+m.rf)/2*0.95,rw=m.rw||m.rf*0.72,g=Math.atan2(wy-M.ey,wx-M.ex),hl=(m.hand||m.rf)*1.05;
   const fm=[M.ex+(wx-M.ex)*0.3,M.ey+(wy-M.ey)*0.3];
   limb(x,R,[[M.sx,M.sy],[M.ex,M.ey],fm,[wx,wy]],[m.ru,re,m.rf,rw],[wx+Math.cos(g)*hl,wy+Math.sin(g)*hl,m.hand||m.rf,g],m.far)}
+ /* Side-view gait (profile art). Same clock/stride state as KneeRig (o._ku phase, o._kD cycle length, o._ka blend), but:
+    - the hips ride up and down so the standing leg stays almost straight (no squat), lowest when both feet are down;
+    - heel strikes first (toe up), then the foot rolls flat, then the heel lifts and the foot pushes off the toe;
+    - the touching point (heel / sole / toe) moves back at exactly ground speed, so nothing slides. */
+ function sidePose(P,R,o){const PI=Math.PI,TAU=PI*2,c01=v=>Math.max(0,Math.min(1,v)),ka=o._ka||0,A=ka*ka*(3-2*ka),S=R.S,s=Math.min(R.s0,S/(o._kD||S/R.s0)),u=o._ku||0,
+   dir=o._kd||1,run=c01((R.s0-s)/(R.s0*0.7)),T1=R.toe!==undefined?R.toe:0.55,H1=R.heel!==undefined?R.heel:0.22,piv=(v,t)=>{const r=rot(v[0],v[1],t);return[v[0]-r[0],v[1]-r[1]]};
+  const tg=P.legs.map(g=>{const l=g.l,q=((u+(l.o||0))%1+1)%1,st=q<s,fv=[l.f[2]-l.a[0],l.f[3]-l.a[1]],hv=[l.f[0]-l.a[0],l.f[1]-l.a[1]];let X,Y=0,th=0,off=[0,0],cp=[0,0];
+   if(st){const qa=q/s;X=S/2-S*qa;
+    cp=hv;if(qa>0.62){th=T1*((qa-0.62)/0.38)**2;off=piv(fv,th);cp=fv}else if(qa<0.14){th=-H1*(1-qa/0.14)**2;off=piv(hv,th)}}
+   else{const v=(q-s)/(1-s),e=v*v*(3-2*v);X=-S/2+S*e-run*(R.kick||0)*Math.sin(PI*Math.min(1,v*1.6));
+    /* lift: knee pulls the foot up early in the swing, then it reaches forward and comes down heel first */
+    Y=-(R.lift*(1+run*1.1))*Math.sin(PI*Math.pow(v,0.8));
+    if(v<0.4){const d=(1-v/0.4)**2;th=T1*d;const oe=piv(fv,T1);off=[oe[0]*d,oe[1]*d]}else if(v>0.72){const d=((v-0.72)/0.28)**2;th=-H1*d;const oe=piv(hv,-H1);off=[oe[0]*d,oe[1]*d]}}
+   return{g,st,ax:l.a[0]+(dir*X+off[0])*A,ay:l.a[1]+(Y+off[1])*A,fr:th*A,cp,ci:cp===fv?1:0}});
+  let drop=0;for(const t of tg){const g=t.g,l=g.l,Lm=0.985*(g.L1+g.L2),dx=t.ax-l.h[0],need=t.ay-Math.sqrt(Math.max(0,Lm*Lm-dx*dx))-l.h[1];if(need>drop)drop=need}
+  const by=drop+A*run*(R.S*0.05);
+  const legs=tg.map(t=>{const g=t.g,l=g.l,hx=l.h[0],hy=l.h[1]+by,ax=t.ax,ay=t.ay;let d=Math.hypot(ax-hx,ay-hy);d=Math.min(Math.max(d,Math.abs(g.L1-g.L2)+0.01),g.L1+g.L2-0.01);
+   const base=Math.atan2(ay-hy,ax-hx),of=Math.acos(Math.max(-1,Math.min(1,(g.L1*g.L1+d*d-g.L2*g.L2)/(2*g.L1*d)))),sd=g.side||1,a=base+sd*of,kx=hx+g.L1*Math.cos(a),ky=hy+g.L1*Math.sin(a);
+   const c=rot(t.cp[0],t.cp[1],t.fr);return{g,hx,hy,kx,ky,ax,ay,fr:t.fr,stance:t.st,cx:ax+c[0],cy:ay+c[1],ci:t.ci}});
+  const arms=P.arms.map(g=>{const m=g.m,w=Math.cos(TAU*(u+(m.o||0))),Am=(m.A||0.3)*(1+run*0.6),Em=(m.E||0.35)*(1+run*0.9);
+   const sa=-dir*Am*w*A,ea=-dir*(Em*(0.55+0.45*w)+run*0.35)*A,ex=m.s[0]+(m.e[0]-m.s[0])*Math.cos(sa)-(m.e[1]-m.s[1])*Math.sin(sa),ey=m.s[1]+by+(m.e[0]-m.s[0])*Math.sin(sa)+(m.e[1]-m.s[1])*Math.cos(sa);
+   return{g,sx:m.s[0],sy:m.s[1]+by,sa,ex,ey,fa:sa+ea}});
+  return{A,by,legs,arms,run}}
  /* o: per-character state. x: world x. k: world px per art px. flip: facing left. on: feet on the ground */
- function step(o,x,k,flip,R,on){return KneeRig.step(o,x,k,flip,R,on)}
+ /* Walking/running uses the side-view (profile) art so her face, body and feet all point the way she goes (Peter, Oct 30);
+    the front art is only for standing still. o._sm = last time she moved sideways (in the air too), so a jump keeps the profile. */
+ const SIDE_HOLD=260;
+ function step(o,x,k,flip,R,on){const n=KneeRig.clock();if(o._sx!==undefined){const d=Math.abs(x-o._sx);if(d>0.05*k&&d<120)o._sm=n}o._sx=x;return KneeRig.step(o,x,k,flip,R,on)}
+ function sideOn(ch,o){return !!(ch.side&&o&&o._sm&&KneeRig.clock()-o._sm<SIDE_HOLD)}
  /* draw in art space (ctx already translated/scaled so 1 unit = 1 art px, top-left of the art at 0,0) */
- function draw(x,ch,o){const R=ch.R,P=prep(R),Q=KneeRig.pose(P,R,o||{});o&&(o._kf=Q.legs.map(L=>[L.ax,L.ay,L.stance]));
-  for(const M of Q.arms)if(M.g.m.far)armDraw(x,R,M);
+ function draw(x,ch,o){const sd=sideOn(ch,o);if(sd)ch=ch.side;const R=ch.R,P=prep(R),Q=sd?sidePose(P,R,o):KneeRig.pose(P,R,o||{});o&&(o._kf=Q.legs.map(L=>[L.cx!==undefined?L.cx:L.ax,L.cy!==undefined?L.cy:L.ay,L.stance,L.ci||0]),o._side=sd);
+  /* profile: lean the upper body (torso + arms) a little forward from the hips, more when running */
+  let lean=0,px=0,py=0;if(sd){lean=Q.A*((R.lean||0.035)+(R.leanRun||0.07)*Q.run);px=R.legs[0].h[0];py=R.legs[0].h[1]+Q.by}
+  const up=()=>{if(lean){x.translate(px,py);x.rotate(lean);x.translate(-px,-py)}};
+  x.save();up();for(const M of Q.arms)if(M.g.m.far)armDraw(x,R,M);x.restore();
   for(const L of Q.legs)if(L.g.l.far)legDraw(x,R,L);
   for(const L of Q.legs)if(!L.g.l.far)legDraw(x,R,L);
-  x.drawImage(ch.img,0,Q.by,R.w,R.h);
-  for(const M of Q.arms)if(!M.g.m.far)armDraw(x,R,M);
+  x.save();up();x.drawImage(ch.img,0,Q.by,R.w,R.h);
+  for(const M of Q.arms)if(!M.g.m.far)armDraw(x,R,M);x.restore();
   return Q}
  /* load one version: assets/ashlin-<v>.json (joints + colours) and the painted body it names (head, hair, torso, dress; no limbs) */
  async function load(v){const q='?v='+(window.GAMEV||1);
   const R=await (await fetch('assets/ashlin-'+v+'.json'+q)).json();
   const img=new Image();img.src='assets/'+(R.art||'ashlin-'+v+'.png')+q;await img.decode().catch(()=>{});
-  return{R,img}}
- return{prep,step,draw,load}})();
+  const ch={R,img};
+  /* side view (profile, facing right) for walking/running: assets/ashlin-<v>-side.json + its art; same frame, ground and gait numbers */
+  try{const r=await fetch('assets/ashlin-'+v+'-side.json'+q);if(r.ok){const SR=await r.json(),si=new Image();si.src='assets/'+SR.art+q;await si.decode();ch.side={R:SR,img:si}}}catch(e){}
+  return ch}
+ return{prep,step,draw,load,sideOn}})();
