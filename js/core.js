@@ -35,7 +35,14 @@ function drawAsh(v,o,x,foot,hpx,flip,opt){const ch=G.ash[v];if(!ch||!ch.R)return
  cx.save();cx.shadowColor=R.glow||'rgba(255,255,255,.95)';cx.shadowBlur=Math.max(6,hpx*0.06);
  cx.drawImage(ashC,0,0,bw*d,bh*d,x-bw/2,foot-(bh-pad),bw,bh);cx.shadowColor='rgba(200,180,255,.55)';cx.shadowBlur=Math.max(10,hpx*0.14);cx.globalAlpha*=0.6;
  cx.drawImage(ashC,0,0,bw*d,bh*d,x-bw/2,foot-(bh-pad),bw,bh);cx.restore();return k}
-function stepAsh(v,o,wx,hpx,flip,on){const ch=G.ash[v];if(!ch||!ch.R)return;AshRig.step(o,wx,hpx/ch.R.ground,flip,ch.R,on)}
+function stepAsh(v,o,wx,hpx,flip,on){const ch=G.ash[v];if(!ch||!ch.R)return;const R=ch.side?ch.side.R:ch.R;AshRig.step(o,wx,hpx/R.ground,flip,R,on)}
+/* ---------- on-screen JUMP (bottom-right) and ACTION (bottom-left) buttons: only in games that set g.pad (the walking chapters) ---------- */
+const PAD={jump:0,act:0};
+function bindPadBtn(el,k){const on=e=>{e.preventDefault();e.stopPropagation();Sound.unlock();if(G.mode!=='play'||G.paused)return;if(!PAD[k]&&G.game&&G.game.btn)G.game.btn(k);PAD[k]=1;el.classList.add('on');try{el.setPointerCapture(e.pointerId)}catch(_){}},
+  off=e=>{e.preventDefault();e.stopPropagation();PAD[k]=0;el.classList.remove('on')};
+ el.addEventListener('pointerdown',on);el.addEventListener('pointerup',off);el.addEventListener('pointercancel',off);el.addEventListener('lostpointercapture',off);el.addEventListener('contextmenu',e=>e.preventDefault())}
+bindPadBtn($('bJump'),'jump');bindPadBtn($('bAct'),'act');
+function padShow(){const on=G.mode==='play'&&!G.paused&&!!(G.game&&G.game.pad);const p=$('pad');if(p.hidden===on){p.hidden=!on;if(!on){PAD.jump=PAD.act=0;for(const b of p.children)b.classList.remove('on')}}}
 /* ---------- input ---------- */
 function P(e){return{x:e.clientX,y:e.clientY,id:e.pointerId,t:performance.now()}}
 cv.addEventListener('pointerdown',e=>{Sound.unlock();const p=P(e);p.sx=p.x;p.sy=p.y;p.st=p.t;G.ptr.set(e.pointerId,p);G.cur.on=false;
@@ -52,7 +59,7 @@ addEventListener('keydown',e=>{Sound.unlock();if(e.repeat&&G.keys[e.code])return
   if(/^Arrow/.test(e.code))e.preventDefault()}
  else if(G.mode==='story'&&(e.code==='Space'||e.code==='ArrowRight')){$('bNext').click();e.preventDefault()}});
 addEventListener('keyup',e=>{G.keys[e.code]=false});
-addEventListener('blur',()=>{G.keys={}});
+addEventListener('blur',()=>{G.keys={};PAD.jump=PAD.act=0;G.ptr.clear()});
 function axisX(){const k=G.keys;return Math.max(-1,Math.min(1,((k.ArrowRight||k.KeyD)?1:0)-((k.ArrowLeft||k.KeyA)?1:0)+G.pad.ax))}
 function axisY(){const k=G.keys;return Math.max(-1,Math.min(1,((k.ArrowDown||k.KeyS)?1:0)-((k.ArrowUp||k.KeyW)?1:0)+G.pad.ay))}
 function runHeld(){return !!(G.keys.ShiftLeft||G.keys.ShiftRight||Math.hypot(G.pad.ax,G.pad.ay)>0.8||G.pad.btn.x||G.pad.btn.rb)}

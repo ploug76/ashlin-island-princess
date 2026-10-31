@@ -4,38 +4,64 @@ const S=GFX,TAU=Math.PI*2;
 function starsFrom(r){return r>=0.85?3:r>=0.5?2:1}
 function yay(x,y,t,o={}){S.burst(x,y,{n:o.n||16,colors:o.colors,shape:o.shape||'spark',speed:o.speed||240,up:120});if(t)S.popText(x,y-24*G.s,t,o.col||'#fff6a0',o.size||30);Sound.fx(o.snd||'good')}
 function oops(x,y,t){S.burst(x,y,{n:10,colors:['#d8d2e6','#b9b2cc'],shape:'puff',speed:90,g:-40,life:0.7});if(t)S.popText(x,y-24*G.s,t,'#ffd0d6',26);S.shake(7);Sound.fx('bad')}
-function hint(t,txt,y){if(t<4.5){cxa(Math.min(1,(4.5-t)*2));S.txt(txt,G.W/2,y||G.H*0.17,Math.min(30*G.s,G.W/18),'#fff');cxa(1)}}
+function hint(t,txt,y,dur){const D=dur||4.5;if(t<D){cxa(Math.min(1,(D-t)*2));const L=txt.split('\n'),sz=Math.min(30*G.s,G.W/(L.length>1?17:18));L.forEach((l,i)=>S.txt(l,G.W/2,(y||G.H*0.17)+i*sz*1.2,sz,'#fff'));cxa(1)}}
 function cxa(a){cx.globalAlpha=a}
 const GAMES={};
 /* ================= walk & run level (chapter 2 island as a child, chapter 5 palace as an adult) ================= */
 GAMES.walk=cfg=>{const isl=cfg.bg==='island',v=cfg.v,hs0=v==='child'?0.92:1.1,HS=()=>hs0*(G.land?1.18:1);
- const g={axes:true,t:0,done:false,got:0,met:0,bumps:0,hx:0.8,hy:0,vx:0,vy:0,flip:false,o:{},items:cfg.items.map(i=>({...i,got:false})),
-  friends:(cfg.friends||[]).map(f=>({...f,met:false,mt:0})),movers:(cfg.movers||[]).map(m=>({...m,x:m.x0,d:1,ph:Math.random(),y:0})),
-  sagi:S.hopper(-0.2),tika:S.hopper(-1.2),azx:0.3,azy:0,max:cfg.items.length+(cfg.friends||[]).length,wasOn:true};
- const ch=()=>G.ash[v];
- function dims(){const U=G.land?G.H*0.34:Math.min(G.H*0.25,G.W*0.52);return{U,gy:G.land?G.H*0.86:G.H*0.8}}
+ /* Controls (Peter's standard, same as Hair Mob): swipe & hold anywhere to walk (swipe farther = run), swipe up = jump,
+    JUMP button bottom-right (hold = higher), ACTION button bottom-left (say hi / pick up / shoo a rat). Keys: arrows/WASD, Shift run,
+    Space/Up jump, X/E/Enter action. Gamepad: stick or d-pad, A jump, X/B action, stick pushed far or RB = run. */
+ const g={axes:true,pad:true,t:0,done:false,got:0,met:0,bumps:0,hx:0.8,hy:0,vx:0,vy:0,flip:false,o:{},items:cfg.items.map(i=>({...i,got:false})),
+  friends:(cfg.friends||[]).map(f=>({...f,met:false,mt:0})),movers:(cfg.movers||[]).map(m=>({...m,x:m.x0,d:1,ph:Math.random(),y:0,gone:0})),
+  sagi:S.hopper(-0.2),tika:S.hopper(-1.2),azx:0.3,azy:0,max:cfg.items.length+(cfg.friends||[]).length,wasOn:true,
+  coy:0,jbuf:0,jhold:false,onG:true,cam:0,camI:false,say:null};
+ const ch=()=>G.ash[v],SR=()=>{const c=ch();return c.side?c.side.R:c.R};
+ /* landscape: ground a bit higher so the JUMP / ACTION buttons sit below everyone's feet */
+ function dims(){const U=G.land?G.H*0.34:Math.min(G.H*0.25,G.W*0.52);return{U,gy:G.land?G.H*0.78:G.H*0.8}}
  const ground=x=>{let h=0;for(const o of cfg.obst)if(Math.abs(x-o.x)<o.w/2+0.1)h=Math.max(h,o.h);return h};
- g.jump=()=>{if(g.hy<=ground(g.hx)+0.001&&g.vy===0){const gr=3.4;g.vy=Math.sqrt(2*gr*0.62);Sound.fx('jump');const{U,gy}=dims();S.burst(g.hx*U-(g.cam||0),gy-g.hy*U,{n:8,colors:isl?['#d9b98a','#c9a36a']:['#fff','#e8e0d0'],shape:'puff',speed:80,g:-20,life:0.5})}};
- g.act=()=>g.jump();
- g.key=c=>{if(c==='ArrowUp'||c==='KeyW'||c==='Space'){g.jump();return true}return false};
- g.padBtn=n=>{if(n==='a'){g.jump();return true}return false};
- g.up=p=>{if(p.tap||p.swipe==='up')g.jump()};
- g.update=dt=>{g.t+=dt;const{U,gy}=dims(),R=ch().R,walkV=R.vw/R.ground*0.95*HS(),runV=R.vr/R.ground*1.05*HS();
-  let dir=axisX(),run=runHeld();
-  for(const p of G.ptr.values()){if(performance.now()-p.st<110)continue;const cam=g.cam||0,hsx=g.hx*U-cam,dx=p.x-hsx;if(Math.abs(dx)>U*0.22){dir=Math.sign(dx);run=Math.abs(dx)>Math.min(U*1.3,G.W*0.3)}else dir=0;break}
-  if(Math.abs(dir)<0.2)dir=0;const tv=dir?Math.sign(dir)*(run?runV:walkV):0;g.vx+=clamp(tv-g.vx,-4*dt,4*dt);if(dir)g.flip=dir<0;
+ /* jump physics (world units = U): apex ~0.85 U in 0.36 s when held, short hop when tapped, heavier fall, coyote 0.1 s, buffer 0.14 s */
+ const PH={gu:13.1,gd:17.5,cut:2.6,jv:4.72,coy:0.12,buf:0.14,vmax:9,acc:5.5,dec:7.5,air:3.2};
+ g.jump=()=>{g.jbuf=PH.buf;g.tPress=g.t};
+ const jumpHeld=()=>!!(G.keys.Space||G.keys.ArrowUp||G.keys.KeyW||G.pad.btn.a||G.pad.btn.up||PAD.jump||g.swUp);
+ function near(x,r){return Math.abs(x-g.hx)<r}
+ g.act=()=>{const{U,gy}=dims(),cam=g.cam;Sound.fx('tap');
+  for(const f of g.friends)if(!f.met&&near(f.x,1.0)){f.met=true;f.mt=g.t;g.got++;yay(f.x*U-cam,gy-U,'Friend!',{shape:'heart',colors:['#ff7aa8','#ffb3cc']});return}
+  for(const m of g.movers)if(!m.gone&&near(m.x,0.9)){m.gone=1;m.d=Math.sign(m.x-g.hx)||1;S.popText(m.x*U-cam,gy-U*0.4,'Shoo!','#fff6a0',26);Sound.fx('squeak');return}
+  const reach=g.hy+hs0*0.95;for(const it of g.items)if(!it.got&&near(it.x,0.45)&&it.h<=reach+0.05&&it.h>=g.hy-0.1){collect(it);return}
+  const who=isl?['Sagi: Hee hee!','Tika: Toot toot!']:['Sagi: This way, Ash!','Azul: Ooh, fancy!'];S.popText(g.hx*U-cam,gy-U*HS()*1.1,who[(g.t*2|0)%2],'#fff',22)};
+ function collect(it){const{U,gy}=dims();it.got=true;g.got++;yay(it.x*U-g.cam,gy-it.h*U,'+1',{snd:'collect',colors:isl?['#ffd23f','#ffb03a','#fff']:['#ff8fb8','#fff','#ffd23f']})}
+ g.key=c=>{if(c==='ArrowUp'||c==='KeyW'||c==='Space'){g.jump();return true}if(c==='KeyX'||c==='KeyE'||c==='KeyJ'){g.act();return true}return false};
+ g.padBtn=n=>{if(n==='a'||n==='up'){g.jump();return true}if(n==='x'||n==='b'||n==='y'){g.act();return true}return false};
+ g.btn=(k)=>{if(k==='jump')g.jump();else g.act()};
+ /* swipe & hold: the anchor trails the finger (max 110 px), so sliding back the other way turns her right away */
+ g.down=p=>{p.ax=p.x;p.ay=p.y;p.up=false};
+ g.move=p=>{if(p.ax===undefined){p.ax=p.x;p.ay=p.y}const R=110*G.s,dx=p.x-p.ax;if(Math.abs(dx)>R)p.ax=p.x-Math.sign(dx)*R;
+  const uy=p.ay-p.y;if(!p.up&&uy>42*G.s&&uy>Math.abs(p.x-p.sx)*1.1){p.up=true;g.jump();g.swUpId=p.id}if(p.ay-p.y>R)p.ay=p.y+R;if(p.y>p.ay)p.ay=p.y};
+ g.up=p=>{if(g.swUpId===p.id)g.swUpId=null};
+ g.update=dt=>{g.t+=dt;const{U,gy}=dims(),R=SR(),walkV=R.vw/R.ground*0.95*HS(),runV=R.vr/R.ground*1.05*HS();
+  let dir=axisX(),run=runHeld();g.swUp=false;
+  for(const p of G.ptr.values()){if(p.ax===undefined)continue;const dx=p.x-p.ax;if(g.swUpId===p.id)g.swUp=true;
+   if(Math.abs(dx)>14*G.s){dir=Math.sign(dx);run=Math.abs(dx)>64*G.s}}
+  if(Math.abs(dir)<0.2)dir=0;const tv=dir?Math.sign(dir)*(run?runV:walkV):0;
+  /* ground: quick start, a short soft stop; air: she keeps her momentum and can steer a little */
+  const a=g.onG?(tv&&Math.sign(tv)===Math.sign(g.vx||tv)?PH.acc:PH.dec):PH.air;g.vx+=clamp(tv-g.vx,-a*dt,a*dt);
+  if(dir)g.flip=dir<0;else if(Math.abs(g.vx)>0.02)g.flip=g.vx<0;
   let nx=clamp(g.hx+g.vx*dt,0.3,cfg.len+0.5);if(g.hy<ground(nx)-0.02){nx=g.hx;g.vx=0}g.hx=nx;
-  const gr=3.4;if(g.vy!==0||g.hy>ground(g.hx)){g.vy-=gr*dt;g.hy+=g.vy*dt;const gh=ground(g.hx);if(g.hy<=gh){g.hy=gh;g.vy=0}}
-  const on=g.vy===0;if(on&&!g.wasOn)S.burst(g.hx*U-(g.cam||0),gy-g.hy*U,{n:6,colors:isl?['#d9b98a']:['#fff'],shape:'puff',speed:60,g:-10,life:0.4});g.wasOn=on;
+  const gh0=ground(g.hx),wasG=g.onG;g.onG=g.hy<=gh0+0.001&&g.vy<=0;if(wasG&&!g.onG)g.tLeave=g.t;if(g.onG){g.hy=gh0;g.vy=0;g.coy=PH.coy}else g.coy-=dt;
+  if(g.jbuf>0&&g.coy>0){g.vy=PH.jv;g.coy=0;g.jbuf=0;g.jhold=true;g.onG=false;Sound.fx('jump');S.burst(g.hx*U-g.cam,gy-g.hy*U,{n:8,colors:isl?['#d9b98a','#c9a36a']:['#fff','#e8e0d0'],shape:'puff',speed:80,g:-20,life:0.5})}
+  g.jbuf=Math.max(0,g.jbuf-dt);if(!jumpHeld())g.jhold=false;
+  if(!g.onG){const gr=g.vy>0?PH.gu*(g.jhold?1:PH.cut):PH.gd;g.vy=Math.max(-PH.vmax,g.vy-gr*dt);g.hy+=g.vy*dt;const gh=ground(g.hx);if(g.hy<=gh&&g.vy<=0){g.hy=gh;g.vy=0;g.onG=true;g.coy=PH.coy}}
+  const on=g.onG;if(on&&!g.wasOn)S.burst(g.hx*U-g.cam,gy-g.hy*U,{n:6,colors:isl?['#d9b98a']:['#fff'],shape:'puff',speed:60,g:-10,life:0.4});g.wasOn=on;
   stepAsh(v,g.o,g.hx*U,U*HS(),g.flip,on);
-  for(const it of g.items)if(!it.got&&Math.abs(it.x-g.hx)<0.28&&Math.abs((g.hy+0.5*HS())-it.h)<0.5){it.got=true;g.got++;yay(it.x*U-g.cam,gy-it.h*U,'+1',{snd:'collect',colors:isl?['#ffd23f','#ffb03a','#fff']:['#ff8fb8','#fff','#ffd23f']})}
-  for(const f of g.friends){if(!f.met&&Math.abs(f.x-g.hx)<0.7){f.met=true;f.mt=g.t;g.got++;yay(f.x*U-g.cam,gy-U,'Friend!',{shape:'heart',colors:['#ff7aa8','#ffb3cc']})}}
-  for(const m of g.movers){m.ph+=dt*2.2;const f=m.ph%1,air=f<0.62;if(air){m.x+=m.d*(0.32/0.62)*dt;m.y=Math.sin(Math.PI*f/0.62)*0.07}else{m.y=0;if(m.x>m.x0+m.r)m.d=-1;else if(m.x<m.x0-m.r)m.d=1}m.flip=m.d<0;
-   if(Math.abs(m.x-g.hx)<0.25&&g.hy<0.14&&(!g.bt||g.t-g.bt>0.8)){g.bt=g.t;g.bumps++;g.vx=-Math.sign(m.x-g.hx||1)*0.9;g.vy=1.2;g.hy=0.001;Sound.fx('squeak');oops(g.hx*U-g.cam,gy-U*0.5,'Eek! A rat!')}}
+  for(const it of g.items)if(!it.got&&Math.abs(it.x-g.hx)<0.28&&it.h>=g.hy-0.05&&it.h<=g.hy+hs0*0.78)collect(it);
+  g.say=null;for(const f of g.friends)if(!f.met&&near(f.x,1.0))g.say=f;
+  for(const m of g.movers){m.ph+=dt*(m.gone?4:2.2);const f=m.ph%1,air=f<0.62;if(air){m.x+=m.d*(m.gone?1.6:0.32/0.62)*dt;m.y=Math.sin(Math.PI*f/0.62)*0.07}else{m.y=0;if(!m.gone){if(m.x>m.x0+m.r)m.d=-1;else if(m.x<m.x0-m.r)m.d=1}}m.flip=m.d<0;if(m.gone)continue;
+   if(Math.abs(m.x-g.hx)<0.25&&g.hy<0.14&&(!g.bt||g.t-g.bt>0.8)){g.bt=g.t;g.bumps++;g.vx=-Math.sign(m.x-g.hx||1)*0.9;g.vy=2.4;g.hy+=0.001;g.onG=false;g.coy=0;Sound.fx('squeak');oops(g.hx*U-g.cam,gy-U*0.5,'Eek! A rat!')}}
   /* friends follow in hops: they only move while in the air, so their feet never slide */
   const lead=g.hx,rate=1+clamp(Math.abs(g.vx)-0.5,0,1)*0.6;S.hopTo(g.sagi,lead-0.7,dt,0.5,rate);S.hopTo(g.tika,g.sagi.x-0.8,dt,0.62,rate);
   g.azx=lerp(g.azx,g.hx+(g.flip?-0.5:0.5),Math.min(1,dt*1.5));
-  g.cam=clamp(g.hx*U-G.W*0.38,0,cfg.len*U+U-G.W);
+  {const tc=clamp(g.hx*U-G.W*(g.flip?0.56:0.36),0,cfg.len*U+U-G.W);if(!g.camI){g.cam=tc;g.camI=true}else g.cam+=(tc-g.cam)*Math.min(1,dt*3.2)}
   hudInfo((isl?'Mangoes':'Flowers & friends')+' '+g.got+' / '+g.max);
   if(g.hx>=cfg.len){g.done=true}};
  /* painted far layer (slow), ground band that moves 1:1 with Ashlin's feet, foreground foliage (fast) */
@@ -71,10 +97,12 @@ GAMES.walk=cfg=>{const isl=cfg.bg==='island',v=cfg.v,hs0=v==='child'?0.92:1.1,HS
   S.spr('azul_fly',g.azx*U-cam,gy-U*1.25+Math.sin(t*1.6)*8*s,U*0.42,{center:1,face:g.flip?'l':'r',rot:Math.sin(t*1.6)*0.05});
   drawAsh(v,g.o,g.hx*U-cam,gy-g.hy*U,U*HS(),g.flip);
   front(U,gy,cam,t);S.drawParticles();
-  hint(g.t,G.land?'Hold where you want to go. Tap to jump!':'Hold where to go. Tap to jump!')};
+  if(g.say){const x=g.say.x*U-cam;S.bubble(x,gy-(g.say.who==='tallulah'?U*0.5:U*1.05),'Tap ACTION to say hi!')}
+  hint(g.t,G.land?'Swipe & hold anywhere to walk (farther = run).\nJUMP is on the right, ACTION on the left.':'Swipe & hold to walk\n(swipe farther = run).\nJUMP right, ACTION left.',G.land?G.H*0.2:G.H*0.15,7)};
  g.stars=()=>starsFrom((g.got-g.bumps*0.5)/g.max);
  g.qa=()=>{const{U,gy}=dims();return{hx:g.hx,len:cfg.len,obst:cfg.obst,U,gy,cam:g.cam,hy:g.hy,vx:g.vx,o:{u:g.o._ku,a:g.o._ka,v:g.o._kv,D:g.o._kD,f:g.o._kf},
-  hop:[g.sagi.x,g.sagi.ph,g.tika.x,g.tika.ph]}};
+  hop:[g.sagi.x,g.sagi.ph,g.tika.x,g.tika.ph],onG:g.onG,vy:g.vy,flip:g.flip,side:!!g.o._side,gnd:ground(g.hx),fr:g.friends.filter(f=>!f.met).map(f=>f.x),mv:g.movers.filter(m=>!m.gone).map(m=>m.x),
+  it:g.items.filter(i=>!i.got).map(i=>[i.x,i.h]),got:g.got,max:g.max,hs:HS(),hs0,tLeave:g.tLeave,tPress:g.tPress,t:g.t}};
  return g};
 /* ================= chapter 1: find the clues on the beach ================= */
 GAMES.find=()=>{const L=[['chest','the chest'],['banner','the purple banner'],['blanket','the blanket'],['lantern','the lantern'],['bottle','the bottle'],['rope','the rope']];

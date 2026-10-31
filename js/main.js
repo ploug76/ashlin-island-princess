@@ -24,7 +24,7 @@ function skipStory(){const q=storyQ;if(!q)return;storyQ=null;Sound.fx('swish');q
 const HT_IMG={find:'chest',walk:'mango',crocs:'croc',voyage:'ship',ball:'flower',rats:'rat',dolphins:'dolphin',antidote:'bowl',cake:'cake',lullaby:'conch'};
 function howto(){const c=CHAPTERS[G.ch];setMode('howto');GFX.clearParticles();G.game=GAMES[c.game.type](c.game.cfg);show('howto');$('htNum').textContent='Chapter '+(G.ch+1)+' of '+CHAPTERS.length;$('htTitle').textContent=c.title;
  $('htImg').src='art/'+(HT_IMG[c.game.type]||'star')+'.webp?v='+GAMEV;$('htText').textContent=c.game.how;
- $('htKeys').textContent=G.land?'Touch, mouse, keyboard (arrows / Space) or a gamepad all work.':'Touch, keyboard or a gamepad all work.';setTimeout(()=>$('bStart').focus({preventScroll:true}),50)}
+ $('htKeys').textContent=CHAPTERS[G.ch].game.type==='walk'?'Keys: arrows to walk, Shift to run, Space to jump, X for action. Gamepad: stick, A jump, X action.':G.land?'Touch, mouse, keyboard (arrows / Space) or a gamepad all work.':'Touch, keyboard or a gamepad all work.';setTimeout(()=>$('bStart').focus({preventScroll:true}),50)}
 function play(){const c=CHAPTERS[G.ch];setMode('play');show('none');hud(true);$('hudCh').textContent=(G.ch+1)+'. '+c.title;G.paused=false;if(c.game.music)Sound.play(c.game.music);else Sound.stop()}
 function finish(skipped){const g=G.game,c=CHAPTERS[G.ch];setMode('result');G.resT=performance.now();hud(false);const st=skipped?0:clamp(g.stars(),1,3);
  G.save.done[G.ch]=1;G.save.stars[G.ch]=Math.max(G.save.stars[G.ch]||0,st);saveGame();
@@ -72,7 +72,7 @@ function frame(now){const dt=Math.min(0.05,(now-last)/1000);last=now;G.t+=dt;pol
  else if(G.mode==='story'){typeStep(dt);tableau(G.storyKey,stageRect(),G.t)}
  else drawTitle(G.t);
  cx.restore()}
- if(window.__aipTrace)window.__aipTrace(G);
+ padShow();if(window.__aipTrace)window.__aipTrace(G);
  }catch(e){console.error(e);G.err=(G.err||0)+1}
  requestAnimationFrame(frame)}
 setMode('loading');requestAnimationFrame(frame);
